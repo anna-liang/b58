@@ -11,9 +11,15 @@ module tictactoe
 		VGA_R,   						//	VGA Red[9:0]
 		VGA_G,	 						//	VGA Green[9:0]
 		VGA_B   						//	VGA Blue[9:0]
+		PS2_KBDAT						//	PS2 Keyboard Data
+		PS2_KBCLK						// 	PS2 Keyboard Clock
 	);
 
 	input			CLOCK_50;				//	50 MHz
+	input PS2_KBDAT;
+	input PS2_KBCLK;
+	input wire [7:0] kb_scan_code;
+
 	input   [17:0]   SW;
 
 	output			VGA_CLK;   				//	VGA Clock
@@ -34,6 +40,12 @@ module tictactoe
 	wire resetn;
 	assign resetn = SW[17];
 	wire ld_p1, ld_p2, ld_sq, ld_sq2, drawEn;
+
+	// Create wires for keyboard module
+	wire [6:0] ASCII_value;
+	wire kb_sc_ready;
+	wire kb_letter_case;
+
 	
 	// Create an Instance of a VGA controller - there can be only one!
 	// Define the number of colours as well as the initial background
@@ -59,6 +71,29 @@ module tictactoe
 		defparam VGA.MONOCHROME = "FALSE";
 		defparam VGA.BITS_PER_COLOUR_CHANNEL = 1;
 		defparam VGA.BACKGROUND_IMAGE = "black.mif";
+
+
+	// Instansiate Keyboard module
+    keyboard kd
+    (
+        .clk(CLOCK_50),
+        .reset(resetn),
+        .ps2d(PS2_KBDAT),
+        .ps2c(PS2_KBCLK),
+        .scan_code(kb_scan_code),
+        .scan_code_ready(kb_sc_ready),
+        .letter_case_out(kb_letter_case)
+    );
+
+    // Instansiate ascii converter
+    keytoascii ascii
+    (
+        .ascii_code(ASCII_value),
+        .scan_code(kb_scan_code),
+        .letter_case(kb_letter_case)
+    );
+
+    
 	
     // Instansiate datapath
 	datapath d0(.ld_x(ld_x),
