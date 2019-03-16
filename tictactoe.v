@@ -1,3 +1,17 @@
+/* Wild Misere Tic Tac Toe
+
+Wild Misere Tic Tac Toe is a variation of the classic Tic Tac Toe game.
+The "Wild" factor involves allowing a player to choose if they wish to
+play an 'X' or an 'O' on each turn.
+The "Misere" factor puts a twist on the ending condition of the game.
+The goal is to avoid playing three X's or three O's in a row.
+Whoever plays three letters in a row loses the game.
+
+This game involves taking the input of the position (1-9) of the move and the
+choice of 'X' or 'O' from the keyboard, and displays the game on a
+VGA monitor.
+
+*/
 module tictactoe
 	(
 		CLOCK_50,						//	On Board 50 MHz
@@ -31,21 +45,26 @@ module tictactoe
 	output	[9:0]	VGA_G;	 				//	VGA Green[9:0]
 	output	[9:0]	VGA_B;   				//	VGA Blue[9:0]
 	
-	// Create wires for player 1, player 2, writeEn, and resetn
-	wire [0:0] p1;
-	wire [0:0] p2;
-	wire [3:0] sq1;
-	wire [3:0] sq2;
+	// Create wires for loads, write, draw, reset, and data
+	wire go
 	wire writeEn;
 	wire resetn;
+	wire drawEn;
+	wire data_in;
+	wire data_result;
+	wire ld_p1;
+	wire ld_p2;
+	wire ld_pos;
+	wire check;
+	wire [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9, turn;
 	assign resetn = SW[17];
-	wire ld_p1, ld_p2, ld_sq, ld_sq2, drawEn;
 
 	// Create wires for keyboard module
 	wire [6:0] ASCII_value;
 	wire kb_sc_ready;
 	wire kb_letter_case;
 
+	
 	
 	// Create an Instance of a VGA controller - there can be only one!
 	// Define the number of colours as well as the initial background
@@ -96,58 +115,101 @@ module tictactoe
     
 	
     // Instansiate datapath
-	datapath d0(.ld_x(ld_x),
-		    .ld_y(ld_y),
-		    .ld_c(ld_c),
+	datapath d0(.ld_p1(ld_p1),
+		    .ld_p2(ld_p2),
+		    .data_in(data_in),
+			.pos(pos),
+			.ld_pos(ld_pos),
 		    .drawEn(drawEn),
-		    .position(SW[6:0]),
-		    .col(SW[9:7]),
 		    .resetn(resetn),
 		    .clock(CLOCK_50),
-		    .x_out(x),
-		    .y_out(y),
-		    .col_out(colour));
+		    .s1(s1),
+		    .s2(s2),
+		    .s3(s3),
+			.s4(s4),
+			.s5(s5),
+			.s6(s6),
+			.s7(s7),
+			.s8(s8),
+			.s9(s9)
+			);
 
     // Instansiate FSM control
-	control c0(.go(SW[16]),
-		   .ld(SW[15]),
+	control c0(.go(go),
 		   .resetn(resetn),
 		   .clock(CLOCK_50),
-		   .ld_x(ld_x),
-		   .ld_y(ld_y),
-		   .ld_c(ld_c),
+		   .check(check),
+		   .ld_p1(ld_p1),
+		   .ld_p2(ld_p2),
+		   .ld_pos(ld_pos),
 		   .writeEn(writeEn),
-		   .drawEn(drawEn));
+		   .drawEn(drawEn)
+		   );
+
+	// Instansiate checking
+	check_end e0(
+			.s1(s1),
+		    .s2(s2),
+		    .s3(s3),
+			.s4(s4),
+			.s5(s5),
+			.s6(s6),
+			.s7(s7),
+			.s8(s8),
+			.s9(s9),
+			.turn(turn),
+			.check(check),
+			.data_result(data_result)
+			);
     
 endmodule
 
-module datapath(ld_p1, ld_p2, data_in, square, drawEn, resetn, clock);
-	input [0:0] data_in;
-	input [3:0] square;
-	input ld_p1, ld_p2, drawEn, resetn, clock;
-	output [0:0] p1_out;
-	output [0:0] p2_out;
-	output reg [0:0] data_result;
-	//output [2:0] col_out;
+module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9);
+	input [1:0] data_in;
+	input [3:0] pos;
+	input ld_p1, ld_p2, ld_pos, drawEn, resetn, clock;
+	// Registers for each square of the grid
+	output reg [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9;
 
 	// Input registers for player 1, player 2, and square on grid
-	reg [0:0] p1, p2;
-	reg [3:0] sq;
-	// Registers for each square of the grid
-	reg [0:0] s0, s1, s2, s3, s4, s5, s6, s7, s8
-	
-	
+	reg [1:0] p1, p2;
+	reg [3:0] position;
+
 	always @(posedge clock)
 	begin
-		// If a player and square has been loaded
-		if (ld_p1 && ld_sq || ld_p2 && ld_sq)
+		// Reset all registers
+		if (resetn)
 		begin
-			// Grid registers
-			always @(*)
+			p1 <= 2'b0;
+			p2 <= 2'b0;
+			position <= 4'b0;
+			s1 <= 2'b0;
+			s2 <= 2'b0;
+			s3 <= 2'b0;
+			s4 <= 2'b0;
+			s5 <= 2'b0;
+			s6 <= 2'b0;
+			s7 <= 2'b0;
+			s8 <= 2'b0;
+			s9 <= 2'b0;
+		end
+		// Load data values
+		else
+		begin
+			// ****might not need player registers or position register***
+			// Loading player choices in player registers
+			if (ld_p1)
+				p1 <= data_in;
+			if (ld_p2)
+				p2 <= data_in;
+			// Loading square position in position register
+			if (ld_pos)
+				position <= pos;
+			// If a player and a position has been loaded
+			if (ld_p1 || ld_p2)
 			begin
-				// Move value into appropriate register
-				case (square)
-					4'b0000: s0 <= data_in;
+				// Move value into appropriate square register
+				case (pos)
 					4'b0001: s1 <= data_in;
 					4'b0010: s2 <= data_in;
 					4'b0011: s3 <= data_in;
@@ -156,25 +218,11 @@ module datapath(ld_p1, ld_p2, data_in, square, drawEn, resetn, clock);
 					4'b0110: s6 <= data_in;
 					4'b0111: s7 <= data_in;
 					4'b1000: s8 <= data_in; 
-					default: s0 = 4'b111;
+					4'b1001: s9 <= data_in;
+					default: s1 <= 4'b0, s2 <= 4'b0, s3 <= 4'b0, s4 <= 4'b0, s5 <= 4'b0, s6 <= 4'b0, s7 <= 4'b0, s8 <= 4'b0, s9 <= 4'b0;
 				endcase
 			end
 		end
-	end
-			/*
-		if (ld_p1)
-			//p1 <= data_in;	// load player 1's move in p1 register
-			
-		if (ld_p2)
-			p2 <= data_in;	// load player 2's move in p2 register
-			
-		if (ld_sq1)
-			sq1 <= square;	// load grid position in sq1 register
-		if (ld_sq2)
-			sq2 <= square;	// load grid position in sq2 register
-			*/
-		
-
 	/*
 		if (!resetn)
 		begin
@@ -213,22 +261,24 @@ module datapath(ld_p1, ld_p2, data_in, square, drawEn, resetn, clock);
 
 endmodule
 
-module control(go, ld, resetn, clock, ld_p1, ld_p2, ld_sq, writeEn, drawEn);
+module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, writeEn, drawEn, turn);
 
-	input go, ld, resetn, clock;
-	output reg ld_p1, ld_p2, ld_sq, writeEn, drawEn;
+	// Declare inputs, outputs, wires, and regs
+	input go, resetn, clock, check;
+	output reg ld_p1, ld_p2, ld_pos, writeEn, drawEn;
+	output reg [1:0] turn;
 	
 	reg [5:0] curr_state, next_state;
 
 	// Declare states
-	localparam  S_LOAD_P1_SQ	 = 5'd0;
-				S_LOAD_P1_SQ_WAIT = 5'd1;
+	localparam  S_LOAD_P1_POS	 = 5'd0;
+				S_LOAD_P1_POS_WAIT = 5'd1;
 				S_LOAD_P1        = 5'd2,
                 S_LOAD_P1_WAIT   = 5'd3,
 				S_DRAW_P1 	  	 = 5'd4,
                 S_CHECK_P1       = 5'd5,
-				S_LOAD_P2_SQ	 = 5'd6;
-				S_LOAD_P2_SQ_WAIT = 5'd7;
+				S_LOAD_P2_POS	 = 5'd6;
+				S_LOAD_P2_POS_WAIT = 5'd7;
                 S_LOAD_P2        = 5'd8,
                 S_LOAD_P2_WAIT   = 5'd9,
 				S_DRAW_P2     	 = 5'd10,
@@ -240,19 +290,19 @@ module control(go, ld, resetn, clock, ld_p1, ld_p2, ld_sq, writeEn, drawEn);
     always@(*)
     begin: state_table 
             case (current_state)
-				S_LOAD_P1_SQ: next_state = go ? S_LOAD_P1_SQ_WAIT : S_LOAD_P1_SQ; // Loop in current state until player 1 enters a square
-				S_LOAD_P1_SQ_WAIT: next_state = go ? S_LOAD_P1_SQ_WAIT : S_LOAD_P1; // Loop in current state until go signal goes low
+				S_LOAD_P1_POS: next_state = go ? S_LOAD_P1_POS_WAIT : S_LOAD_P1_POS; // Loop in current state until player 1 enters a square
+				S_LOAD_P1_POS_WAIT: next_state = go ? S_LOAD_P1_POS_WAIT : S_LOAD_P1; // Loop in current state until go signal goes low
                 S_LOAD_P1: next_state = go ? S_LOAD_P1_WAIT : S_LOAD_P1; // Loop in current state until player 1 enters a value
                 S_LOAD_P1_WAIT: next_state = go ? S_LOAD_P1_WAIT : S_CHECK_P1; // Loop in current state until go signal goes low
 				S_DRAW_P2: next_state = S_CHECK_P1;	// Move into the checking state for player 1
-				S_CHECK_P1: next_state = ; // /////
+				S_CHECK_P1: next_state = check ? S_END_P1 : S_LOAD_P2_POS; // End the game or move to take player 2's inputs
 				
-				S_LOAD_P2_SQ: next_state = go ? S_LOAD_P2_SQ_WAIT : S_LOAD_P2_SQ; // Loop in current state until player 2 enters a square
-				S_LOAD_P2_SQ_WAIT: next_state = go ? S_LOAD_P2_SQ_WAIT : S_LOAD_P2; // Loop in current state until go signal goes low
+				S_LOAD_P2_POS: next_state = go ? S_LOAD_P2_POS_WAIT : S_LOAD_P2_POS; // Loop in current state until player 2 enters a square
+				S_LOAD_P2_POS_WAIT: next_state = go ? S_LOAD_P2_POS_WAIT : S_LOAD_P2; // Loop in current state until go signal goes low
 				S_LOAD_P2: next_state = go ? S_LOAD_P2_WAIT : S_LOAD_P2; // Loop in current state until player 2 enters a value
                 S_LOAD_P2_WAIT: next_state = go ? S_LOAD_P2_WAIT : S_CHECK_P2; // Loop in current state until go signal goes low
 				S_DRAW_P2: next_state = S_CHECK_P2; // Move into the checking state for player 2
-                S_CHECK_P2: next_state = ; // ///////////////
+                S_CHECK_P2: next_state = check ? S_END_P2 : S_LOAD_P1_POS; // End the game or move to take player 1's inputs
 				
             default:     next_state = S_LOAD_P1_SQ;
         endcase
@@ -260,21 +310,22 @@ module control(go, ld, resetn, clock, ld_p1, ld_p2, ld_sq, writeEn, drawEn);
 	
 	always @(*)
 	begin
-		// Set all loads to a default 0
+		// Set all to a default 0
 		ld_p1 = 1'b0;
 		ld_p2 = 1'b0;
-		ld_sq = 1'b0;
+		ld_pos = 1'b0;
 		writeEn = 1'b0;
 		drawEn = 1'b0;
+		turn = 2'b00;
 		case (curr_state)
-			S_LOAD_P1_SQ: begin	// Load player 1's square
-				ld_sq = 1'b1;
+			S_LOAD_P1_POS: begin	// Load player 1's square
+				ld_pos = 1'b1;
 				end
 			S_LOAD_P1: begin	// Load player 1's move
 				ld_p1 = 1'b1;
 				end
-			S_LOAD_P2_SQ: begin // Load player 2's square
-				ld_sq = 1'b1;
+			S_LOAD_P2_POS: begin // Load player 2's square
+				ld_pos = 1'b1;
 				end
 			S_LOAD_P2: begin	// Load player 2's move
 				ld_p2 = 1'b1;
@@ -287,22 +338,11 @@ module control(go, ld, resetn, clock, ld_p1, ld_p2, ld_sq, writeEn, drawEn);
 				writeEn = 1'b1;
 				drawEn = 1'b1;
 				end
-			S_CHECK_P1: begin	// Check "losing" conditions for player 1
-
-				ld_s0 = 1'b1;	// Take value in square 0
-				ld_s1 = 1'b1;	// Take value in square 1
-				alu_select_a = 4'b0000;	// Select square 0
-				alu_select_b = 4'b0001;	// Select square 1
-				alu_op = 1'b0; 	// Multiply
-				ld_alu_out = 1'b1; ld_temp = 1'b1; // Load back in temp register
-				ld_s2 = 1'b1; 	// Take value in square 2
-				alu_select_a = 4'b0010; // Select square 0
-				alu_select_b = 4'b1010; // Select temp register (square 0 and square 1)
-				ld_r = 1'b1; 	// Store result in result register
-				
-				
+			S_CHECK_P1: begin	// Tells check it's player 1's turn
+				turn = 2'b01;
 				end
-			S_CHECK_P2: begin	// Check "losing" conditions for player 2
+			S_CHECK_P2: begin	// Tells check it's player 2's turn
+				turn = 2'b10;
 				end
 		endcase
 	end
@@ -315,4 +355,66 @@ module control(go, ld, resetn, clock, ld_p1, ld_p2, ld_sq, writeEn, drawEn);
         else
             curr_state <= next_state; 	// Otherwise, move to the next state
     end
+endmodule
+
+/* Checks the end conditions of the game.
+Determines if there are three letters in a row, if there is a tie, or if the game continues
+*/
+module check_end(s1, s2, s3, s4, s5, s6, s7, s8, s9, turn, check, data_result)
+	input [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9, turn;
+	output check;
+	output [1:0] data_result;
+	
+	// Temp wires for end combinations
+	wire [1:0] t1, t2, t3, t4, t5, t6, t7, t8;
+	// Temp wires for calculation
+	wire [0:0] check1, check2;
+	
+	// Check rows for a loss
+	assign t1 = s1 & s2 & s3;
+	assign t2 = s4 & s5 & s6;
+	assign t3 = s7 & s8 & s9;
+	
+	// Check columns for a loss
+	assign t4 = s1 & s4 & s7;
+	assign t5 = s2 & s5 & s8;
+	assign t6 = s3 & s6 & s9;
+	
+	// Check diagonals for a loss
+	assign t7 = s1 & s5 & s9;
+	assign t8 = s3 & s5 & s7;
+	
+	// Determine if there is a winner based on the presence of a high bit
+	assign check1 = t1[0] | t2[0] | t3[0] | t4[0] | t5[0] | t6[0] | t7[0] | t8[0];
+	assign check2 = t1[1] | t2[1] | t3[1] | t4[1] | t5[1] | t6[1] | t7[1] | t8[1];
+	
+	// If we have 01 or 10, the player who just made a move lost
+	if (check1 || check2)
+	begin
+		// Check being high means the game ended
+		check <= 1'b1;
+		// If it was player 1's turn, they lose
+		if (turn == 2'b01)
+			data_result <= 2'b10;
+		// If it was player 2's turn, they lose
+		else if (turn == 2'b10)
+			data_result <= 2'b01;
+	end
+	// Otherwise, we have 00 for everything
+	// Either the game has not ended yet, or the game ended in a tie
+	else
+	begin
+		// If any of the squares have 00, that means the square is empty
+		// i.e. the game has not ended yet
+		if (s1 == 2'b0 || s2 == 2'b0 || s3 == 2'b0 || s4 == 2'b0 || s5 == 2'b0 || s6 == 2'b0 || s7 == 2'b0 || s8 == 2'b0 || s9 = 2'b0)
+			// Set everything to low
+			check <= 1'b0;
+			data_result <= 2'b00;
+		// Otherwise, we have a tie
+		else
+			// Set everything to high
+			check <= 1'b1;
+			data_result <= 2'b11;
+	end
+
 endmodule
