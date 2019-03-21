@@ -54,14 +54,12 @@ module tictactoe
 	wire writeEn;
 	wire resetn;
 	wire drawEn;
-	reg [1:0] data_in;
+	wire data_in;
 	wire data_result;
 	wire ld_p1;
 	wire ld_p2;
 	wire ld_pos;
 	wire check;
-	reg  [3:0] pos;
-	wire [3:0] draw;
 	wire [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9, turn;
 	assign resetn = SW[17];
 
@@ -125,19 +123,16 @@ module tictactoe
 	begin
 		// If a move type has been entered
 		if(ASCII_value == 8'h42 || ASCII_value == 8'h52)
-		begin
 			// Data in is 10 or 01, default 00
 			case(ASCII_value)
 				8'h42 : data_in <= 2'b01; // Move type is B, data_in is 01
 				8'h52 : data_in <= 2'b10; // Move type is R, data_in is 10
 				default : data_in <= 2'b00;
 			endcase
-		end
 		// Else a cell number
 		else
-		begin
 			// Pos is 4 bit 1-9, default 0
-			case(ASCII_value)
+			case
 				8'h31 : pos <= 4'b0001; // Cell number 1, pos is 1 in binary
 				8'h32 : pos <= 4'b0010; // Cell number 1, pos is 1 in binary
 				8'h33 : pos <= 4'b0011; // Cell number 1, pos is 1 in binary
@@ -147,9 +142,7 @@ module tictactoe
 				8'h37 : pos <= 4'b0111; // Cell number 1, pos is 1 in binary
 				8'h38 : pos <= 4'b1000; // Cell number 1, pos is 1 in binary
 				8'h39 : pos <= 4'b1001; // Cell number 1, pos is 1 in binary
-				default : pos <= 4'b000;
 			endcase
-		end
 	end
 	
 	
@@ -182,9 +175,7 @@ module tictactoe
 		   .ld_p2(ld_p2),
 		   .ld_pos(ld_pos),
 		   .writeEn(writeEn),
-		   .drawEn(drawEn),
-			.old_draw(draw),
-			.draw(draw)
+		   .drawEn(drawEn)
 		   );
 
 	// Instansiate checking
@@ -219,24 +210,12 @@ module tictactoe
 
 endmodule
 
-module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9, data_in_x_pos, colour_in, draw, colour, old_x, x, old_y, y);
+module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9);
 	input [1:0] data_in; // X or O
-	input [6:0] data_in_x_pos;
 	input [3:0] pos; // Cell
-	input [2:0] colour_in;
 	input ld_p1, ld_p2, ld_pos, drawEn, resetn, clock;
-
-	input [4:0] draw;
-    input [7:0] old_x;
-    input [6:0] old_y;
-
 	// Registers for each square of the grid
 	output reg [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9;
-
-	output reg [7:0] x;
-    output reg [6:0] y;
-    output [2:0] colour;
-
 
 	// Input registers for player 1, player 2, and square on grid
 	reg [1:0] p1, p2;
@@ -244,11 +223,8 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 
 	always @(posedge clock)
 	begin
-		x <= old_x;
-        y <= old_y;
-
 		// Reset all registers
-		if (!resetn)
+		if (resetn)
 		begin
 			p1 <= 2'b0;
 			p2 <= 2'b0;
@@ -262,8 +238,6 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 			s7 <= 2'b0;
 			s8 <= 2'b0;
 			s9 <= 2'b0;
-			x = 8'b0;
-			y = 7'b0;
 		end
 		// Load data values
 		else
@@ -272,10 +246,8 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 			// Loading player choices in player registers
 			if (ld_p1)
 				p1 <= data_in;
-				x <= {1'b0, data_in_x_pos};
 			if (ld_p2)
 				p2 <= data_in;
-				x <= {1'b0, data_in_x_pos};
 			// Loading square position in position register
 			if (ld_pos)
 				position <= pos;
@@ -284,10 +256,7 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 			begin
 				// Move value into appropriate square register
 				case (pos)
-					4'b0001: begin
-						s1 <= data_in;
-						x <= 8'b00000001;
-					end
+					4'b0001: s1 <= data_in;
 					4'b0010: s2 <= data_in;
 					4'b0011: s3 <= data_in;
 					4'b0100: s4 <= data_in;
@@ -299,24 +268,8 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 					default: s1 <= 4'b0;
 				endcase
 			end
-
-			if (drawEn)
-				begin
-					if (draw == 5'b11110)
-					begin
-						y <= data_in_x_pos;
-						draw <= 5'b00000;
-					end
-					else
-						draw <= draw + 1'b1;
-				end
 		end
 	end
-
-	assign x = old_x + draw[1:0];
-    assign y = old_y + draw[3:2];
-	assign colour = colour_in;
-
 	/*
 		if (!resetn)
 		begin
@@ -355,14 +308,12 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 
 endmodule
 
-module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, writeEn, drawEn, turn, old_draw, draw);
+module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, writeEn, drawEn, turn);
 
 	// Declare inputs, outputs, wires, and regs
 	input go, resetn, clock, check;
-	input [3:0] old_draw;
 	output reg ld_p1, ld_p2, ld_pos, writeEn, drawEn;
 	output reg [1:0] turn;
-	output reg [3:0] draw;
 	
 	reg [5:0] curr_state, next_state;
 
@@ -388,16 +339,16 @@ module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, writeEn, drawEn, 
             case (curr_state)
 				S_LOAD_P1_POS: next_state = go ? S_LOAD_P1_POS_WAIT : S_LOAD_P1_POS; // Loop in current state until player 1 enters a square
 				S_LOAD_P1_POS_WAIT: next_state = go ? S_LOAD_P1_POS_WAIT : S_LOAD_P1; // Loop in current state until go signal goes low
-            S_LOAD_P1: next_state = go ? S_LOAD_P1_WAIT : S_LOAD_P1; // Loop in current state until player 1 enters a value
-            S_LOAD_P1_WAIT: next_state = go ? S_LOAD_P1_WAIT : S_CHECK_P1; // Loop in current state until go signal goes low
-				S_DRAW_P1: next_state = (old_draw == 5'b11111) ? S_CHECK_P1 : S_DRAW_P1;	// Move into the checking state for player 1
+				S_LOAD_P1: next_state = go ? S_LOAD_P1_WAIT : S_LOAD_P1; // Loop in current state until player 1 enters a value
+				S_LOAD_P1_WAIT: next_state = go ? S_LOAD_P1_WAIT : S_CHECK_P1; // Loop in current state until go signal goes low
+				S_DRAW_P1: next_state = S_CHECK_P1;	// Move into the checking state for player 1
 				S_CHECK_P1: next_state = check ? S_END_P1 : S_LOAD_P2_POS; // End the game or move to take player 2's inputs
 				
 				S_LOAD_P2_POS: next_state = go ? S_LOAD_P2_POS_WAIT : S_LOAD_P2_POS; // Loop in current state until player 2 enters a square
 				S_LOAD_P2_POS_WAIT: next_state = go ? S_LOAD_P2_POS_WAIT : S_LOAD_P2; // Loop in current state until go signal goes low
 				S_LOAD_P2: next_state = go ? S_LOAD_P2_WAIT : S_LOAD_P2; // Loop in current state until player 2 enters a value
 				S_LOAD_P2_WAIT: next_state = go ? S_LOAD_P2_WAIT : S_CHECK_P2; // Loop in current state until go signal goes low
-				S_DRAW_P2: next_state = (old_draw == 5'b11111) ? S_CHECK_P2 : S_DRAW_P2; // Move into the checking state for player 2
+				S_DRAW_P2: next_state = S_CHECK_P2; // Move into the checking state for player 2
 				S_CHECK_P2: next_state = check ? S_END_P2 : S_LOAD_P1_POS; // End the game or move to take player 1's inputs
 				
             default:     next_state = S_LOAD_P1_POS;
@@ -413,7 +364,6 @@ module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, writeEn, drawEn, 
 		writeEn = 1'b0;
 		drawEn = 1'b0;
 		turn = 2'b00;
-		draw = 5'b00000;
 		case (curr_state)
 			S_LOAD_P1_POS: begin	// Load player 1's square
 				ld_pos = 1'b1;
@@ -430,12 +380,10 @@ module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, writeEn, drawEn, 
 			S_DRAW_P1: begin	// Draw player 1's move
 				writeEn = 1'b1;
 				drawEn = 1'b1;
-				draw = old_draw + 5'b00001;
 				end
 			S_DRAW_P2: begin	// Draw player 2's move
 				writeEn = 1'b1;
 				drawEn = 1'b1;
-				draw = old_draw + 5'b00001;
 				end
 			S_CHECK_P1: begin	// Tells check it's player 1's turn
 				turn = 2'b01;
