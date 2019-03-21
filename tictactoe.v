@@ -68,8 +68,6 @@ module tictactoe
 	wire [7:0] x;
 	wire [6:0] y;
 
-	assign resetn = SW[17];
-
 	// Create wires for keyboard module
 	wire [6:0] ASCII_value;
 	wire kb_sc_ready;
@@ -237,6 +235,7 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 	input [1:0] data_in; // X or O
 	input [3:0] pos; // Cell
 	input ld_p1, ld_p2, ld_pos, drawEn, resetn, clock, ld_x, ld_y, ld_c;
+	input [2:0] col;
 
 	// Registers for each square of the grid
 	output reg [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9;
