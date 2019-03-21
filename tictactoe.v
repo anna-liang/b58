@@ -15,8 +15,8 @@ VGA monitor.
 module tictactoe
 	(
 		CLOCK_50,						//	On Board 50 MHz
-        SW,
 		// The ports below are for the VGA output
+		/*
 		VGA_CLK,   						//	VGA Clock
 		VGA_HS,							//	VGA H_SYNC
 		VGA_VS,							//	VGA V_SYNC
@@ -24,9 +24,11 @@ module tictactoe
 		VGA_SYNC_N,						//	VGA SYNC
 		VGA_R,   						//	VGA Red[9:0]
 		VGA_G,	 						//	VGA Green[9:0]
-		VGA_B,   						//	VGA Blue[9:0]
+		VGA_B,   						//	VGA Blue[9:0] */
 		PS2_KBDAT,						//	PS2 Keyboard Data
 		PS2_KBCLK,						// 	PS2 Keyboard Clock
+		HEX0,
+		HEX2,
 		HEX4,							// Hex dispays
 		HEX5,
 	);
@@ -36,8 +38,9 @@ module tictactoe
 	input PS2_KBCLK;
 	wire [7:0] kb_scan_code;
 
-	input   [17:0]   SW;
+	// input   [17:0]   SW;
 
+	/*
 	output			VGA_CLK;   				//	VGA Clock
 	output			VGA_HS;					//	VGA H_SYNC
 	output			VGA_VS;					//	VGA V_SYNC
@@ -45,23 +48,25 @@ module tictactoe
 	output			VGA_SYNC_N;				//	VGA SYNC
 	output	[9:0]	VGA_R;   				//	VGA Red[9:0]
 	output	[9:0]	VGA_G;	 				//	VGA Green[9:0]
-	output	[9:0]	VGA_B;   				//	VGA Blue[9:0]
+	output	[9:0]	VGA_B;   				//	VGA Blue[9:0] */
+	output 	[6:0] 	HEX0;
+	output 	[6:0]		HEX2;
 	output 	[6:0] 	HEX4;
-	output 	[6:0]	HEX5;
+	output 	[6:0]		HEX5;
 	
 	// Create wires for loads, write, draw, reset, and data
-	wire go;
+	reg go;
 	wire writeEn;
-	wire resetn;
+	reg resetn;
 	wire drawEn;
-	wire data_in;
+	reg [1:0] data_in;
 	wire data_result;
 	wire ld_p1;
 	wire ld_p2;
 	wire ld_pos;
+	reg [3:0] pos;
 	wire check;
 	wire [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9, turn;
-	assign resetn = SW[17];
 
 	// Create wires for keyboard module
 	wire [6:0] ASCII_value;
@@ -74,6 +79,7 @@ module tictactoe
 	// Define the number of colours as well as the initial background
 	// image file (.MIF) for the controller.
 	
+	/*
 	vga_adapter VGA(
 			.resetn(resetn),
 			.clock(CLOCK_50),
@@ -81,7 +87,7 @@ module tictactoe
 			.x(x),
 			.y(y),	
 			.plot(writeEn),
-			/* Signals for the DAC to drive the monitor. */
+			// Signals for the DAC to drive the monitor
 			.VGA_R(VGA_R),
 			.VGA_G(VGA_G),
 			.VGA_B(VGA_B),
@@ -93,7 +99,7 @@ module tictactoe
 		defparam VGA.RESOLUTION = "160x120";
 		defparam VGA.MONOCHROME = "FALSE";
 		defparam VGA.BITS_PER_COLOUR_CHANNEL = 1;
-		defparam VGA.BACKGROUND_IMAGE = "black.mif";
+		defparam VGA.BACKGROUND_IMAGE = "black.mif"; */
 
 
 	// Instansiate Keyboard module
@@ -120,30 +126,43 @@ module tictactoe
 	
 	// Decode the ascii
 	always@(CLOCK_50)
-	begin
-		// If a move type has been entered
-		if(ASCII_value == 8'h42 || ASCII_value == 8'h52)
-			// Data in is 10 or 01, default 00
-			case(ASCII_value)
-				8'h42 : data_in <= 2'b01; // Move type is B, data_in is 01
-				8'h52 : data_in <= 2'b10; // Move type is R, data_in is 10
-				default : data_in <= 2'b00;
-			endcase
-		// Else a cell number
-		else
-			// Pos is 4 bit 1-9, default 0
-			case
-				8'h31 : pos <= 4'b0001; // Cell number 1, pos is 1 in binary
-				8'h32 : pos <= 4'b0010; // Cell number 1, pos is 1 in binary
-				8'h33 : pos <= 4'b0011; // Cell number 1, pos is 1 in binary
-				8'h34 : pos <= 4'b0100; // Cell number 1, pos is 1 in binary
-				8'h35 : pos <= 4'b0101; // Cell number 1, pos is 1 in binary
-				8'h36 : pos <= 4'b0110; // Cell number 1, pos is 1 in binary
-				8'h37 : pos <= 4'b0111; // Cell number 1, pos is 1 in binary
-				8'h38 : pos <= 4'b1000; // Cell number 1, pos is 1 in binary
-				8'h39 : pos <= 4'b1001; // Cell number 1, pos is 1 in binary
-			endcase
+	begin		
+		// Data in is 10 or 01, default 00
+		case(ASCII_value)
+			8'h62 : data_in <= 2'b01; // Move type is B, data_in is 01
+			8'h72 : data_in <= 2'b10; // Move type is R, data_in is 10
+			default : data_in <= 2'b00; // Default to 0
+		endcase
 	end
+	
+	always@(CLOCK_50)
+	begin
+		// Pos is 4 bit 1-9, default 0
+		case (ASCII_value)
+			8'h31 : pos <= 4'b0001; // Cell number 1, pos is 1 in binary
+			8'h32 : pos <= 4'b0010; // Cell number 1, pos is 1 in binary
+			8'h33 : pos <= 4'b0011; // Cell number 1, pos is 1 in binary
+			8'h34 : pos <= 4'b0100; // Cell number 1, pos is 1 in binary
+			8'h35 : pos <= 4'b0101; // Cell number 1, pos is 1 in binary
+			8'h36 : pos <= 4'b0110; // Cell number 1, pos is 1 in binary
+			8'h37 : pos <= 4'b0111; // Cell number 1, pos is 1 in binary
+			8'h38 : pos <= 4'b1000; // Cell number 1, pos is 1 in binary
+			8'h39 : pos <= 4'b1001; // Cell number 1, pos is 1 in binary
+			default : pos <= 4'b000; // Default to 0
+		endcase
+	end
+	
+	
+	always@(CLOCK_50)
+	begin		
+		// "GO" active high(Enter key)
+		case(ASCII_value)
+			8'h0A : go <= 1'b0;
+			default : go <= 1'b1; // Default to 0
+		endcase
+	end
+
+	
 	
 	
     // Instansiate datapath
@@ -195,15 +214,25 @@ module tictactoe
 			);
     
 
+	 	hex_display hex0(
+		.IN(data_in[1:0]),
+		.OUT(HEX0[6:0])
+		);
+		
+			hex_display hex2(
+		.IN(pos[3:0]),
+		.OUT(HEX2[6:0])
+		);
+	 
 
 	// DISPLAY KEYBOARD INPUT TO HEX4 AND HEX5
 	hex_display hex4(
-		.IN(ASCII_value[6:4]),
+		.IN(ASCII_value[3:0]),
 		.OUT(HEX4[6:0])
 		);
 
 	hex_display hex5(
-		.IN(ASCII_value[3:0]),
+		.IN(ASCII_value[6:4]),
 		.OUT(HEX5[6:0])
 		);
 
@@ -224,7 +253,7 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 	always @(posedge clock)
 	begin
 		// Reset all registers
-		if (resetn)
+		if (!resetn)
 		begin
 			p1 <= 2'b0;
 			p2 <= 2'b0;
