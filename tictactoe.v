@@ -27,7 +27,9 @@ module tictactoe
 		VGA_B,   						//	VGA Blue[9:0]
 		PS2_KBDAT,						//	PS2 Keyboard Data
 		PS2_KBCLK,						// 	PS2 Keyboard Clock
-		HEX4,							// Hex dispays
+		HEX0,								// Hex dispays
+		HEX2,
+		HEX4,							
 		HEX5,
 	);
 
@@ -46,7 +48,9 @@ module tictactoe
 	output	[9:0]	VGA_R;   				//	VGA Red[9:0]
 	output	[9:0]	VGA_G;	 				//	VGA Green[9:0]
 	output	[9:0]	VGA_B;   				//	VGA Blue[9:0]
-	output 	[6:0] 	HEX4;
+	output 	[6:0] HEX0;
+	output 	[6:0]	HEX2;
+	output 	[6:0] HEX4;
 	output 	[6:0]	HEX5;
 	
 	// Create wires for loads, write, draw, reset, and data
@@ -54,7 +58,7 @@ module tictactoe
 	wire writeEn;
 	reg resetn;
 	wire drawEn;
-	reg data_in;
+	reg [1:0] data_in;
 	wire data_result;
 	wire ld_p1;
 	wire ld_p2;
@@ -220,15 +224,27 @@ module tictactoe
     
 
 	// DISPLAY KEYBOARD INPUT TO HEX4 AND HEX5
-	hex_display hex4(
-		.IN(ASCII_value[6:4]),
-		.OUT(HEX4[6:0])
+	hex_display hex0(
+		.IN(data_in[1:0]),
+		.OUT(HEX0[6:0])
+	);
+	
+	hex_display hex2(
+	.IN(pos[3:0]),
+	.OUT(HEX2[6:0])
 	);
 
-	hex_display hex5(
+	hex_display hex4(
 		.IN(ASCII_value[3:0]),
+		.OUT(HEX4[6:0])
+	);
+	
+	hex_display hex5(
+		.IN(ASCII_value[6:4]),
 		.OUT(HEX5[6:0])
 	);
+
+
 endmodule
 
 module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9, x_out, y_out, col_out, col, ld_x, ld_y, ld_c);
