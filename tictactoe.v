@@ -15,8 +15,8 @@ VGA monitor.
 module tictactoe
 	(
 		CLOCK_50,						//	On Board 50 MHz
+        SW,
 		// The ports below are for the VGA output
-		/*
 		VGA_CLK,   						//	VGA Clock
 		VGA_HS,							//	VGA H_SYNC
 		VGA_VS,							//	VGA V_SYNC
@@ -24,11 +24,9 @@ module tictactoe
 		VGA_SYNC_N,						//	VGA SYNC
 		VGA_R,   						//	VGA Red[9:0]
 		VGA_G,	 						//	VGA Green[9:0]
-		VGA_B,   						//	VGA Blue[9:0] */
+		VGA_B,   						//	VGA Blue[9:0]
 		PS2_KBDAT,						//	PS2 Keyboard Data
 		PS2_KBCLK,						// 	PS2 Keyboard Clock
-		HEX0,
-		HEX2,
 		HEX4,							// Hex dispays
 		HEX5,
 	);
@@ -38,9 +36,8 @@ module tictactoe
 	input PS2_KBCLK;
 	wire [7:0] kb_scan_code;
 
-	// input   [17:0]   SW;
+	input   [17:0]   SW;
 
-	/*
 	output			VGA_CLK;   				//	VGA Clock
 	output			VGA_HS;					//	VGA H_SYNC
 	output			VGA_VS;					//	VGA V_SYNC
@@ -48,63 +45,64 @@ module tictactoe
 	output			VGA_SYNC_N;				//	VGA SYNC
 	output	[9:0]	VGA_R;   				//	VGA Red[9:0]
 	output	[9:0]	VGA_G;	 				//	VGA Green[9:0]
-	output	[9:0]	VGA_B;   				//	VGA Blue[9:0] */
-	output 	[6:0] 	HEX0;
-	output 	[6:0]		HEX2;
+	output	[9:0]	VGA_B;   				//	VGA Blue[9:0]
 	output 	[6:0] 	HEX4;
-	output 	[6:0]		HEX5;
+	output 	[6:0]	HEX5;
 	
 	// Create wires for loads, write, draw, reset, and data
 	reg go;
 	wire writeEn;
 	reg resetn;
 	wire drawEn;
-	reg [1:0] data_in;
+	reg data_in;
 	wire data_result;
 	wire ld_p1;
 	wire ld_p2;
 	wire ld_pos;
-	reg [3:0] pos;
 	wire check;
 	wire [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9, turn;
+	reg [3:0] pos;
+
+	// Create the colour, x, y and writeEn wires that are inputs to the controller.
+	wire [2:0] colour;
+	wire [7:0] x;
+	wire [6:0] y;
+
+	assign resetn = SW[17];
 
 	// Create wires for keyboard module
 	wire [6:0] ASCII_value;
 	wire kb_sc_ready;
 	wire kb_letter_case;
-
-	
 	
 	// Create an Instance of a VGA controller - there can be only one!
 	// Define the number of colours as well as the initial background
 	// image file (.MIF) for the controller.
 	
-	/*
 	vga_adapter VGA(
-			.resetn(resetn),
-			.clock(CLOCK_50),
-			.colour(colour),
-			.x(x),
-			.y(y),	
-			.plot(writeEn),
-			// Signals for the DAC to drive the monitor
-			.VGA_R(VGA_R),
-			.VGA_G(VGA_G),
-			.VGA_B(VGA_B),
-			.VGA_HS(VGA_HS),
-			.VGA_VS(VGA_VS),
-			.VGA_BLANK(VGA_BLANK_N),
-			.VGA_SYNC(VGA_SYNC_N),
-			.VGA_CLK(VGA_CLK));
+		.resetn(resetn),
+		.clock(CLOCK_50),
+		.colour(colour),
+		.x(x),
+		.y(y),	
+		.plot(writeEn),
+		/* Signals for the DAC to drive the monitor. */
+		.VGA_R(VGA_R),
+		.VGA_G(VGA_G),
+		.VGA_B(VGA_B),
+		.VGA_HS(VGA_HS),
+		.VGA_VS(VGA_VS),
+		.VGA_BLANK(VGA_BLANK_N),
+		.VGA_SYNC(VGA_SYNC_N),
+		.VGA_CLK(VGA_CLK));
 		defparam VGA.RESOLUTION = "160x120";
 		defparam VGA.MONOCHROME = "FALSE";
 		defparam VGA.BITS_PER_COLOUR_CHANNEL = 1;
-		defparam VGA.BACKGROUND_IMAGE = "black.mif"; */
+		defparam VGA.BACKGROUND_IMAGE = "black.mif";
 
 
 	// Instansiate Keyboard module
-    keyboard kd
-    (
+    keyboard kd(
         .clk(CLOCK_50),
         .reset(resetn),
         .ps2d(PS2_KBDAT),
@@ -115,8 +113,7 @@ module tictactoe
     );
 
     // Instansiate ascii converter
-    keytoascii ascii
-    (
+    keytoascii ascii(
         .ascii_code(ASCII_value),
         .scan_code(kb_scan_code),
         .letter_case(kb_letter_case)
@@ -161,94 +158,101 @@ module tictactoe
 			default : go <= 1'b1; // Default to 0
 		endcase
 	end
-
-	
 	
 	
     // Instansiate datapath
-	datapath d0(.ld_p1(ld_p1),
-		    .ld_p2(ld_p2),
-		    .data_in(data_in),
-		    .pos(pos),
-		    .ld_pos(ld_pos),
-		    .drawEn(drawEn),  
-		    .resetn(resetn),
-		    .clock(CLOCK_50),
-		    .s1(s1),
-		    .s2(s2),
-		    .s3(s3),
-		    .s4(s4),
-		    .s5(s5),
-		    .s6(s6),
-		    .s7(s7),
-		    .s8(s8),
-		    .s9(s9)
-			);
+	datapath d0(
+		.ld_p1(ld_p1),
+		.ld_p2(ld_p2),
+		.data_in(data_in),
+	    .pos(pos),
+	    .ld_pos(ld_pos),
+	    .drawEn(drawEn),  
+	    .resetn(resetn),
+	    .clock(CLOCK_50),
+	    .s1(s1),
+	    .s2(s2),
+	    .s3(s3),
+	    .s4(s4),
+	    .s5(s5),
+	    .s6(s6),
+	    .s7(s7),
+	    .s8(s8),
+	    .s9(s9),
+		.x_out(x),
+	    .y_out(y),
+	    .col_out(colour),
+		.col(SW[9:7]),
+	   	.ld_x(ld_x),
+	   	.ld_y(ld_y),
+	   	.ld_c(ld_c)
+	);
 
     // Instansiate FSM control
-	control c0(.go(go),
-		   .resetn(resetn),
-		   .clock(CLOCK_50),
-		   .check(check),
-		   .ld_p1(ld_p1),
-		   .ld_p2(ld_p2),
-		   .ld_pos(ld_pos),
-		   .writeEn(writeEn),
-		   .drawEn(drawEn)
-		   );
+	control c0(
+		.go(go),
+	   	.resetn(resetn),
+	   	.clock(CLOCK_50),
+	   	.check(check),
+	   	.ld_p1(ld_p1),
+	   	.ld_p2(ld_p2),
+	   	.ld_pos(ld_pos),
+	   	.writeEn(writeEn),
+	   	.drawEn(drawEn),
+	   	.ld_x(ld_x),
+	   	.ld_y(ld_y),
+	  	.ld_c(ld_c)
+	);
 
 	// Instansiate checking
 	check_end e0(
-		    .s1(s1),
-		    .s2(s2),
-		    .s3(s3),
-		    .s4(s4),
-		    .s5(s5),
-		    .s6(s6),
-		    .s7(s7),
-		    .s8(s8),
-		    .s9(s9),
-		    .turn(turn),
-		    .check(check),
-		    .data_result(data_result)
-			);
+	    .s1(s1),
+	    .s2(s2),
+	    .s3(s3),
+	    .s4(s4),
+	    .s5(s5),
+	    .s6(s6),
+	    .s7(s7),
+	    .s8(s8),
+	    .s9(s9),
+	    .turn(turn),
+	    .check(check),
+	    .data_result(data_result)
+	);
     
-
-	 	hex_display hex0(
-		.IN(data_in[1:0]),
-		.OUT(HEX0[6:0])
-		);
-		
-			hex_display hex2(
-		.IN(pos[3:0]),
-		.OUT(HEX2[6:0])
-		);
-	 
 
 	// DISPLAY KEYBOARD INPUT TO HEX4 AND HEX5
 	hex_display hex4(
-		.IN(ASCII_value[3:0]),
+		.IN(ASCII_value[6:4]),
 		.OUT(HEX4[6:0])
-		);
+	);
 
 	hex_display hex5(
-		.IN(ASCII_value[6:4]),
+		.IN(ASCII_value[3:0]),
 		.OUT(HEX5[6:0])
-		);
-
-
+	);
 endmodule
 
-module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9);
+module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9, x_out, y_out, col_out, col, ld_x, ld_y, ld_c);
 	input [1:0] data_in; // X or O
 	input [3:0] pos; // Cell
-	input ld_p1, ld_p2, ld_pos, drawEn, resetn, clock;
+	input ld_p1, ld_p2, ld_pos, drawEn, resetn, clock, ld_x, ld_y, ld_c;
+
 	// Registers for each square of the grid
 	output reg [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9;
+	output [7:0] x_out;
+	output [6:0] y_out;
+	output [2:0] col_out;
 
 	// Input registers for player 1, player 2, and square on grid
 	reg [1:0] p1, p2;
 	reg [3:0] position;
+
+	// Registers for counter, x, y positions and colour
+	reg [3:0] counter;
+	reg [7:0] x;
+	reg [6:0] y;
+	reg [2:0] c;
 
 	always @(posedge clock)
 	begin
@@ -267,6 +271,9 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 			s7 <= 2'b0;
 			s8 <= 2'b0;
 			s9 <= 2'b0;
+			x = 8'b00000000;
+			y = 7'b0000000;
+			c = 3'b000;
 		end
 		// Load data values
 		else
@@ -297,26 +304,16 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 					default: s1 <= 4'b0;
 				endcase
 			end
-		end
-	end
-	/*
-		if (!resetn)
-		begin
-			x = 8'b00000000;
-			y = 7'b0000000;
-			c = 3'b000;
-		end
-		else
-		begin
+
 			if (ld_x)
 				x <= {1'b0, position};
 			else if (ld_y)
 				y <= position;
 			else if (ld_c)
-				c <= col;
+				c <= col;			
 		end
-		*/
-	/*
+	end
+
 	always @(posedge clock)
 	begin
 		if (!resetn)
@@ -333,15 +330,15 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 	assign x_out = x + counter[1:0];
 	assign y_out = y + counter[3:2];
 	assign col_out = c;
-	*/
+
 
 endmodule
 
-module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, writeEn, drawEn, turn);
+module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, writeEn, drawEn, turn, ld_x, ld_y, ld_c);
 
 	// Declare inputs, outputs, wires, and regs
 	input go, resetn, clock, check;
-	output reg ld_p1, ld_p2, ld_pos, writeEn, drawEn;
+	output reg ld_p1, ld_p2, ld_pos, writeEn, drawEn, ld_x, ld_y, ld_c;
 	output reg [1:0] turn;
 	
 	reg [5:0] curr_state, next_state;
@@ -351,16 +348,28 @@ module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, writeEn, drawEn, 
 				S_LOAD_P1_POS_WAIT 		= 5'd1,
 				S_LOAD_P1        		= 5'd2,
 				S_LOAD_P1_WAIT   		= 5'd3,
-				S_DRAW_P1 	  	 		= 5'd4,
-				S_CHECK_P1       		= 5'd5,
-				S_LOAD_P2_POS	 		= 5'd6,
-				S_LOAD_P2_POS_WAIT 		= 5'd7,
-				S_LOAD_P2        		= 5'd8,
-				S_LOAD_P2_WAIT   		= 5'd9,
-				S_DRAW_P2     	 		= 5'd10,
-				S_CHECK_P2       		= 5'd11,
-				S_END_P1         		= 5'd12,
-				S_END_P2	     		= 5'd13;
+				S_LOAD_X_1              = 5'd4,
+				S_LOAD_X_WAIT_1         = 5'd5,
+				S_LOAD_Y_1              = 5'd6,
+				S_LOAD_Y_WAIT_1         = 5'd7,
+				S_LOAD_C_1              = 5'd8,
+				S_LOAD_C_WAIT_1         = 5'd9,
+				S_DRAW_P1 	  	 		= 5'd10,
+				S_CHECK_P1       		= 5'd11,
+				S_LOAD_P2_POS	 		= 5'd12,
+				S_LOAD_P2_POS_WAIT 		= 5'd13,
+				S_LOAD_P2        		= 5'd14,
+				S_LOAD_P2_WAIT   		= 5'd15,
+				S_LOAD_X_2              = 5'd16,
+				S_LOAD_X_WAIT_2         = 5'd17,
+				S_LOAD_Y_2              = 5'd18,
+				S_LOAD_Y_WAIT_2         = 5'd19,
+				S_LOAD_C_2              = 5'd20,
+				S_LOAD_C_WAIT_2         = 5'd21,
+				S_DRAW_P2     	 		= 5'd22,
+				S_CHECK_P2       		= 5'd23,
+				S_END_P1         		= 5'd24,
+				S_END_P2	     		= 5'd25;
 
 	// State table logic
     always@(*)
@@ -369,17 +378,27 @@ module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, writeEn, drawEn, 
 				S_LOAD_P1_POS: next_state = go ? S_LOAD_P1_POS_WAIT : S_LOAD_P1_POS; // Loop in current state until player 1 enters a square
 				S_LOAD_P1_POS_WAIT: next_state = go ? S_LOAD_P1_POS_WAIT : S_LOAD_P1; // Loop in current state until go signal goes low
 				S_LOAD_P1: next_state = go ? S_LOAD_P1_WAIT : S_LOAD_P1; // Loop in current state until player 1 enters a value
-				S_LOAD_P1_WAIT: next_state = go ? S_LOAD_P1_WAIT : S_CHECK_P1; // Loop in current state until go signal goes low
-				S_DRAW_P1: next_state = S_CHECK_P1;	// Move into the checking state for player 1
+				S_LOAD_P1_WAIT: next_state = go ? S_LOAD_P1_WAIT : S_LOAD_X_1; // Loop in current state until go signal goes low
+				S_LOAD_X_1: next_state = go ? S_LOAD_X_WAIT_1 : S_LOAD_X_1;
+				S_LOAD_X_WAIT_1: next_state = go ? S_LOAD_X_WAIT_1 : S_LOAD_Y_1;
+				S_LOAD_Y_1: next_state = go ? S_LOAD_Y_WAIT_1 : S_LOAD_Y_1;
+				S_LOAD_Y_WAIT_1: next_state = go ? S_LOAD_Y_WAIT_1 : S_LOAD_C_1;
+				S_LOAD_C_1: next_state = go ? S_LOAD_C_WAIT_1 : S_LOAD_C_1;
+				S_LOAD_C_WAIT_1: next_state = go ? S_LOAD_C_WAIT_1 : S_DRAW_P1;
+				S_DRAW_P1: next_state = go ? S_CHECK_P1 : S_DRAW_P1;	// Move into the checking state for player 1
 				S_CHECK_P1: next_state = check ? S_END_P1 : S_LOAD_P2_POS; // End the game or move to take player 2's inputs
-				
 				S_LOAD_P2_POS: next_state = go ? S_LOAD_P2_POS_WAIT : S_LOAD_P2_POS; // Loop in current state until player 2 enters a square
 				S_LOAD_P2_POS_WAIT: next_state = go ? S_LOAD_P2_POS_WAIT : S_LOAD_P2; // Loop in current state until go signal goes low
 				S_LOAD_P2: next_state = go ? S_LOAD_P2_WAIT : S_LOAD_P2; // Loop in current state until player 2 enters a value
-				S_LOAD_P2_WAIT: next_state = go ? S_LOAD_P2_WAIT : S_CHECK_P2; // Loop in current state until go signal goes low
-				S_DRAW_P2: next_state = S_CHECK_P2; // Move into the checking state for player 2
+				S_LOAD_P2_WAIT: next_state = go ? S_LOAD_P2_WAIT : S_LOAD_X_2; // Loop in current state until go signal goes low
+				S_LOAD_X_2: next_state = go ? S_LOAD_X_WAIT_2 : S_LOAD_X_2;
+				S_LOAD_X_WAIT_2: next_state = go ? S_LOAD_X_WAIT_2 : S_LOAD_Y_2;
+				S_LOAD_Y_2: next_state = go ? S_LOAD_Y_WAIT_2 : S_LOAD_Y_2;
+				S_LOAD_Y_WAIT_2: next_state = go ? S_LOAD_Y_WAIT_2 : S_LOAD_C_2;
+				S_LOAD_C_2: next_state = go ? S_LOAD_C_WAIT_2 : S_LOAD_C_2;
+				S_LOAD_C_WAIT_2: next_state = go ? S_LOAD_C_WAIT_2 : S_DRAW_P2;
+				S_DRAW_P2: next_state = go ? S_CHECK_P2 : S_DRAW_P2; // Move into the checking state for player 2
 				S_CHECK_P2: next_state = check ? S_END_P2 : S_LOAD_P1_POS; // End the game or move to take player 1's inputs
-				
             default:     next_state = S_LOAD_P1_POS;
         endcase
     end // state_table
@@ -393,6 +412,9 @@ module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, writeEn, drawEn, 
 		writeEn = 1'b0;
 		drawEn = 1'b0;
 		turn = 2'b00;
+		ld_x = 1'b0;
+		ld_y = 1'b0;
+		ld_c = 1'b0;
 		case (curr_state)
 			S_LOAD_P1_POS: begin	// Load player 1's square
 				ld_pos = 1'b1;
@@ -406,16 +428,34 @@ module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, writeEn, drawEn, 
 			S_LOAD_P2: begin	// Load player 2's move
 				ld_p2 = 1'b1;
 				end
-			S_DRAW_P1: begin	// Draw player 1's move
-				writeEn = 1'b1;
-				drawEn = 1'b1;
+			S_LOAD_X_1: begin
+				ld_x = 1'b1;
 				end
-			S_DRAW_P2: begin	// Draw player 2's move
+			S_LOAD_Y_1: begin
+				ld_y = 1'b1;
+				end
+			S_LOAD_C_1: begin
+				ld_c = 1'b1;
+				end
+			S_DRAW_P1: begin	// Draw player 1's move
 				writeEn = 1'b1;
 				drawEn = 1'b1;
 				end
 			S_CHECK_P1: begin	// Tells check it's player 1's turn
 				turn = 2'b01;
+				end
+			S_LOAD_X_2: begin
+				ld_x = 1'b1;
+				end
+			S_LOAD_Y_2: begin
+				ld_y = 1'b1;
+				end
+			S_LOAD_C_2: begin
+				ld_c = 1'b1;
+				end
+			S_DRAW_P2: begin	// Draw player 2's move
+				writeEn = 1'b1;
+				drawEn = 1'b1;
 				end
 			S_CHECK_P2: begin	// Tells check it's player 2's turn
 				turn = 2'b10;
