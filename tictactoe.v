@@ -118,24 +118,52 @@ module tictactoe
 
     
 	
+	// Decode the ascii
+	always@(CLOCK_50)
+	begin
+		// If a move type has been entered
+		if(ASCII_value == 8'h42 || ASCII_value == 8'h52)
+			// Data in is 10 or 01, default 00
+			case(ASCII_value)
+				8'h42 : data_in <= 2'b01; // Move type is B, data_in is 01
+				8'h52 : data_in <= 2'b10; // Move type is R, data_in is 10
+				default : data_in <= 2'b00;
+			endcase
+		// Else a cell number
+		else
+			// Pos is 4 bit 1-9, default 0
+			case
+				8'h31 : pos <= 4'b0001; // Cell number 1, pos is 1 in binary
+				8'h32 : pos <= 4'b0010; // Cell number 1, pos is 1 in binary
+				8'h33 : pos <= 4'b0011; // Cell number 1, pos is 1 in binary
+				8'h34 : pos <= 4'b0100; // Cell number 1, pos is 1 in binary
+				8'h35 : pos <= 4'b0101; // Cell number 1, pos is 1 in binary
+				8'h36 : pos <= 4'b0110; // Cell number 1, pos is 1 in binary
+				8'h37 : pos <= 4'b0111; // Cell number 1, pos is 1 in binary
+				8'h38 : pos <= 4'b1000; // Cell number 1, pos is 1 in binary
+				8'h39 : pos <= 4'b1001; // Cell number 1, pos is 1 in binary
+			endcase
+	end
+	
+	
     // Instansiate datapath
 	datapath d0(.ld_p1(ld_p1),
 		    .ld_p2(ld_p2),
 		    .data_in(data_in),
-			.pos(pos),
-			.ld_pos(ld_pos),
+		    .pos(pos),
+		    .ld_pos(ld_pos),
 		    .drawEn(drawEn),  
 		    .resetn(resetn),
 		    .clock(CLOCK_50),
 		    .s1(s1),
 		    .s2(s2),
 		    .s3(s3),
-			.s4(s4),
-			.s5(s5),
-			.s6(s6),
-			.s7(s7),
-			.s8(s8),
-			.s9(s9)
+		    .s4(s4),
+		    .s5(s5),
+		    .s6(s6),
+		    .s7(s7),
+		    .s8(s8),
+		    .s9(s9)
 			);
 
     // Instansiate FSM control
@@ -152,18 +180,18 @@ module tictactoe
 
 	// Instansiate checking
 	check_end e0(
-			.s1(s1),
+		    .s1(s1),
 		    .s2(s2),
 		    .s3(s3),
-			.s4(s4),
-			.s5(s5),
-			.s6(s6),
-			.s7(s7),
-			.s8(s8),
-			.s9(s9),
-			.turn(turn),
-			.check(check),
-			.data_result(data_result)
+		    .s4(s4),
+		    .s5(s5),
+		    .s6(s6),
+		    .s7(s7),
+		    .s8(s8),
+		    .s9(s9),
+		    .turn(turn),
+		    .check(check),
+		    .data_result(data_result)
 			);
     
 
@@ -290,20 +318,20 @@ module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, writeEn, drawEn, 
 	reg [5:0] curr_state, next_state;
 
 	// Declare states
-	localparam  S_LOAD_P1_POS	 	= 5'd0,
-				S_LOAD_P1_POS_WAIT 	= 5'd1,
+	localparam  S_LOAD_P1_POS	 		= 5'd0,
+				S_LOAD_P1_POS_WAIT 		= 5'd1,
 				S_LOAD_P1        		= 5'd2,
-            S_LOAD_P1_WAIT   		= 5'd3,
+				S_LOAD_P1_WAIT   		= 5'd3,
 				S_DRAW_P1 	  	 		= 5'd4,
-            S_CHECK_P1       		= 5'd5,
+				S_CHECK_P1       		= 5'd5,
 				S_LOAD_P2_POS	 		= 5'd6,
-				S_LOAD_P2_POS_WAIT 	= 5'd7,
-            S_LOAD_P2        		= 5'd8,
-            S_LOAD_P2_WAIT   		= 5'd9,
+				S_LOAD_P2_POS_WAIT 		= 5'd7,
+				S_LOAD_P2        		= 5'd8,
+				S_LOAD_P2_WAIT   		= 5'd9,
 				S_DRAW_P2     	 		= 5'd10,
-            S_CHECK_P2       		= 5'd11,
-            S_END_P1         		= 5'd12,
-            S_END_P2	     			= 5'd13;
+				S_CHECK_P2       		= 5'd11,
+				S_END_P1         		= 5'd12,
+				S_END_P2	     		= 5'd13;
 
 	// State table logic
     always@(*)
@@ -311,17 +339,17 @@ module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, writeEn, drawEn, 
             case (curr_state)
 				S_LOAD_P1_POS: next_state = go ? S_LOAD_P1_POS_WAIT : S_LOAD_P1_POS; // Loop in current state until player 1 enters a square
 				S_LOAD_P1_POS_WAIT: next_state = go ? S_LOAD_P1_POS_WAIT : S_LOAD_P1; // Loop in current state until go signal goes low
-            S_LOAD_P1: next_state = go ? S_LOAD_P1_WAIT : S_LOAD_P1; // Loop in current state until player 1 enters a value
-            S_LOAD_P1_WAIT: next_state = go ? S_LOAD_P1_WAIT : S_CHECK_P1; // Loop in current state until go signal goes low
-				S_DRAW_P2: next_state = S_CHECK_P1;	// Move into the checking state for player 1
+				S_LOAD_P1: next_state = go ? S_LOAD_P1_WAIT : S_LOAD_P1; // Loop in current state until player 1 enters a value
+				S_LOAD_P1_WAIT: next_state = go ? S_LOAD_P1_WAIT : S_CHECK_P1; // Loop in current state until go signal goes low
+				S_DRAW_P1: next_state = S_CHECK_P1;	// Move into the checking state for player 1
 				S_CHECK_P1: next_state = check ? S_END_P1 : S_LOAD_P2_POS; // End the game or move to take player 2's inputs
 				
 				S_LOAD_P2_POS: next_state = go ? S_LOAD_P2_POS_WAIT : S_LOAD_P2_POS; // Loop in current state until player 2 enters a square
 				S_LOAD_P2_POS_WAIT: next_state = go ? S_LOAD_P2_POS_WAIT : S_LOAD_P2; // Loop in current state until go signal goes low
 				S_LOAD_P2: next_state = go ? S_LOAD_P2_WAIT : S_LOAD_P2; // Loop in current state until player 2 enters a value
-            S_LOAD_P2_WAIT: next_state = go ? S_LOAD_P2_WAIT : S_CHECK_P2; // Loop in current state until go signal goes low
+				S_LOAD_P2_WAIT: next_state = go ? S_LOAD_P2_WAIT : S_CHECK_P2; // Loop in current state until go signal goes low
 				S_DRAW_P2: next_state = S_CHECK_P2; // Move into the checking state for player 2
-            S_CHECK_P2: next_state = check ? S_END_P2 : S_LOAD_P1_POS; // End the game or move to take player 1's inputs
+				S_CHECK_P2: next_state = check ? S_END_P2 : S_LOAD_P1_POS; // End the game or move to take player 1's inputs
 				
             default:     next_state = S_LOAD_P1_POS;
         endcase
