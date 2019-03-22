@@ -1,14 +1,14 @@
-/* Wild Misere Tic Tac Toe
+/* Wild Misere Red Tile Blue
 
-Wild Misere Tic Tac Toe is a variation of the classic Tic Tac Toe game.
+Wild Misere Red Tile Blue is a variation of the classic Tic Tac Toe game.
 The "Wild" factor involves allowing a player to choose if they wish to
-play an 'X' or an 'O' on each turn.
+play a 'Red Tile' or 'Blue Tile' on each turn.
 The "Misere" factor puts a twist on the ending condition of the game.
-The goal is to avoid playing three X's or three O's in a row.
-Whoever plays three letters in a row loses the game.
+The goal is to avoid playing three Red Tiles or three Blue Tiles in a row.
+Whoever plays three tiles in a row loses the game.
 
 This game involves taking the input of the position (1-9) of the move and the
-choice of 'X' or 'O' from the keyboard, and displays the game on a
+choice of 'Red Tile' or 'Blue Tile' from the keyboard, and displays the game on a
 VGA monitor.
 
 */
@@ -246,8 +246,8 @@ module tictactoe
 endmodule
 
 module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9, x_out, y_out, col_out, col, ld_x, ld_y, ld_c);
-	input [1:0] data_in; // X or O
-	input [3:0] pos; // Cell
+	input [1:0] data_in; // Red Tile (10) or Blue Tile (01)
+	input [3:0] pos; // Cell (1-9 in binary)
 	input ld_p1, ld_p2, ld_pos, drawEn, resetn, clock, ld_x, ld_y, ld_c;
 	input [2:0] col;
 
@@ -303,19 +303,35 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 			// If a player has been loaded
 			if (ld_p1 || ld_p2)
 			begin
-				// Move value into appropriate square register
-				case (pos)
-					4'b0001: s1 <= data_in;
-					4'b0010: s2 <= data_in;
-					4'b0011: s3 <= data_in;
-					4'b0100: s4 <= data_in;
-					4'b0101: s5 <= data_in;
-					4'b0110: s6 <= data_in;
-					4'b0111: s7 <= data_in;
-					4'b1000: s8 <= data_in; 
-					4'b1001: s9 <= data_in;
-					default: s1 <= 4'b0;
-				endcase
+				// Initialize all registers to 0
+				s1 = 4'b0000;
+				s2 = 4'b0000;
+				s3 = 4'b0000;
+				s4 = 4'b0000;
+				s5 = 4'b0000;
+				s6 = 4'b0000;
+				s7 = 4'b0000;
+				s8 = 4'b0000;
+				s9 = 4'b0000;
+				// Move value into appropriate square register by storing data_in
+				if(pos == 4'b0001)
+					s1 = data_in;
+				else if(pos == 4'b0010)
+					s2 = data_in;
+				else if(pos == 4'b0011)	
+					s3 = data_in;
+				else if(pos == 4'b0100)	
+					s4 = data_in;
+				else if(pos == 4'b0101)	
+					s5 = data_in;
+				else if(pos == 4'b0110)	
+					s6 = data_in;
+				else if(pos == 4'b0111)	
+					s7 = data_in;
+				else if(pos == 4'b1000)
+					s8 = data_in;
+				else if(pos == 4'b1001)	
+					s9 = data_in;
 			end
 
 			if (ld_x)
@@ -491,7 +507,7 @@ module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, writeEn, drawEn, 
 endmodule
 
 /* Checks the end conditions of the game.
-Determines if there are three letters in a row, if there is a tie, or if the game continues
+Determines if there are three tiles in a row, if there is a tie, or if the game continues
 */
 module check_end(s1, s2, s3, s4, s5, s6, s7, s8, s9, turn, check, data_result);
 	input [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9, turn;
