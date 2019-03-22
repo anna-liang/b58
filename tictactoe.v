@@ -121,8 +121,6 @@ module tictactoe
         .letter_case(kb_letter_case)
     );
 
-    
-	
 	// Decode the ascii
 	always@(CLOCK_50)
 	begin		
@@ -332,18 +330,22 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 	always @(posedge clock)
 	begin
 		if (!resetn)
-			counter <= 4'b0000;
+			x_out <= 7'b0;
+			y_out <= 6'b0;
+			col_out <= 3'b0;
+			counter <= 5'b0000;
 		else if (drawEn)
 		begin
-			if (counter == 4'b1111)
-				counter <= 4'b0000;
+			x_out <= x + counter[1:0];
+			y_out <= y + counter[4:2];
+			if (counter == 5'b11111)
+				counter <= 5'b00000;
 			else
 				counter <= counter + 1'b1;
 		end
 	end
 
-	assign x_out = x + counter[1:0];
-	assign y_out = y + counter[3:2];
+
 	assign col_out = c;
 
 
