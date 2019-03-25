@@ -137,14 +137,14 @@ module tictactoe
 		// Pos is 4 bit 1-9, default 0
 		case (ASCII_value)
 			8'h31 : pos <= 4'b0001; // Cell number 1, pos is 1 in binary
-			8'h32 : pos <= 4'b0010; // Cell number 1, pos is 1 in binary
-			8'h33 : pos <= 4'b0011; // Cell number 1, pos is 1 in binary
-			8'h34 : pos <= 4'b0100; // Cell number 1, pos is 1 in binary
-			8'h35 : pos <= 4'b0101; // Cell number 1, pos is 1 in binary
-			8'h36 : pos <= 4'b0110; // Cell number 1, pos is 1 in binary
-			8'h37 : pos <= 4'b0111; // Cell number 1, pos is 1 in binary
-			8'h38 : pos <= 4'b1000; // Cell number 1, pos is 1 in binary
-			8'h39 : pos <= 4'b1001; // Cell number 1, pos is 1 in binary
+			8'h32 : pos <= 4'b0010; // Cell number 2, pos is 2 in binary
+			8'h33 : pos <= 4'b0011; // Cell number 3, pos is 3 in binary
+			8'h34 : pos <= 4'b0100; // Cell number 4, pos is 4 in binary
+			8'h35 : pos <= 4'b0101; // Cell number 5, pos is 5 in binary
+			8'h36 : pos <= 4'b0110; // Cell number 6, pos is 6 in binary
+			8'h37 : pos <= 4'b0111; // Cell number 7, pos is 7 in binary
+			8'h38 : pos <= 4'b1000; // Cell number 8, pos is 8 in binary
+			8'h39 : pos <= 4'b1001; // Cell number 9, pos is 9 in binary
 			default : pos <= 4'b000; // Default to 0
 		endcase
 	end
