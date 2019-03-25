@@ -1,0 +1,38 @@
+
+State Machine - |tictactoe|control:c0|curr_state
+Name curr_state.S_END_P2 curr_state.S_END_P1 curr_state.S_CHECK_P2 curr_state.S_DRAW_P2 curr_state.S_LOAD_C_WAIT_2 curr_state.S_LOAD_C_2 curr_state.S_LOAD_Y_WAIT_2 curr_state.S_LOAD_Y_2 curr_state.S_LOAD_X_WAIT_2 curr_state.S_LOAD_X_2 curr_state.S_LOAD_P2_WAIT curr_state.S_LOAD_P2 curr_state.S_LOAD_P2_POS_WAIT curr_state.S_LOAD_P2_POS curr_state.S_CHECK_P1 curr_state.S_DRAW_P1 curr_state.S_LOAD_C_WAIT_1 curr_state.S_LOAD_C_1 curr_state.S_LOAD_Y_WAIT_1 curr_state.S_LOAD_Y_1 curr_state.S_LOAD_X_WAIT_1 curr_state.S_LOAD_X_1 curr_state.S_LOAD_P1_WAIT curr_state.S_LOAD_P1 curr_state.S_LOAD_P1_POS_WAIT curr_state.S_LOAD_P1_POS 
+curr_state.S_LOAD_P1_POS 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+curr_state.S_LOAD_P1_POS_WAIT 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 
+curr_state.S_LOAD_P1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 1 
+curr_state.S_LOAD_P1_WAIT 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 
+curr_state.S_LOAD_X_1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 1 
+curr_state.S_LOAD_X_WAIT_1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 1 
+curr_state.S_LOAD_Y_1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 
+curr_state.S_LOAD_Y_WAIT_1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 1 
+curr_state.S_LOAD_C_1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 
+curr_state.S_LOAD_C_WAIT_1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 1 
+curr_state.S_DRAW_P1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1 
+curr_state.S_CHECK_P1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 1 
+curr_state.S_LOAD_P2_POS 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 
+curr_state.S_LOAD_P2_POS_WAIT 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 1 
+curr_state.S_LOAD_P2 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 1 
+curr_state.S_LOAD_P2_WAIT 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 
+curr_state.S_LOAD_X_2 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 
+curr_state.S_LOAD_X_WAIT_2 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 
+curr_state.S_LOAD_Y_2 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 
+curr_state.S_LOAD_Y_WAIT_2 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 
+curr_state.S_LOAD_C_2 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 
+curr_state.S_LOAD_C_WAIT_2 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 
+curr_state.S_DRAW_P2 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 
+curr_state.S_CHECK_P2 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 
+curr_state.S_END_P1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 
+curr_state.S_END_P2 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 
+
+State Machine - |tictactoe|keyboard:kd|state_reg
+Name state_reg.ignore_caps_break state_reg.capslock state_reg.ignore_shift_break state_reg.shift state_reg.ignore_break state_reg.lowercase 
+state_reg.lowercase 0 0 0 0 0 0 
+state_reg.ignore_break 0 0 0 0 1 1 
+state_reg.shift 0 0 0 1 0 1 
+state_reg.ignore_shift_break 0 0 1 0 0 1 
+state_reg.capslock 0 1 0 0 0 1 
+state_reg.ignore_caps_break 1 0 0 0 0 1 

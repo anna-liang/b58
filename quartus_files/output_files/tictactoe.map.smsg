@@ -1,0 +1,5 @@
+Info (10281): Verilog HDL Declaration information at tictactoe.v(51): object "HEX0" differs only in case from object "hex0" in the same scope File: /cmshome/lianga17/Desktop/cscb58_project/b58/trunk/tictactoe.v Line: 51
+Info (10281): Verilog HDL Declaration information at tictactoe.v(52): object "HEX2" differs only in case from object "hex2" in the same scope File: /cmshome/lianga17/Desktop/cscb58_project/b58/trunk/tictactoe.v Line: 52
+Info (10281): Verilog HDL Declaration information at tictactoe.v(53): object "HEX4" differs only in case from object "hex4" in the same scope File: /cmshome/lianga17/Desktop/cscb58_project/b58/trunk/tictactoe.v Line: 53
+Info (10281): Verilog HDL Declaration information at tictactoe.v(54): object "HEX5" differs only in case from object "hex5" in the same scope File: /cmshome/lianga17/Desktop/cscb58_project/b58/trunk/tictactoe.v Line: 54
+Warning (10268): Verilog HDL information at tictactoe.v(272): always construct contains both blocking and non-blocking assignments File: /cmshome/lianga17/Desktop/cscb58_project/b58/trunk/tictactoe.v Line: 272
