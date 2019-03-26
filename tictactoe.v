@@ -20,20 +20,20 @@ module tictactoe
 		VGA_CLK,   						//	VGA Clock
 		VGA_HS,							//	VGA H_SYNC
 		VGA_VS,							//	VGA V_SYNC
-		VGA_BLANK_N,						//	VGA BLANK
+		VGA_BLANK_N,					//	VGA BLANK
 		VGA_SYNC_N,						//	VGA SYNC
 		VGA_R,   						//	VGA Red[9:0]
 		VGA_G,	 						//	VGA Green[9:0]
 		VGA_B,   						//	VGA Blue[9:0]
 		PS2_KBDAT,						//	PS2 Keyboard Data
 		PS2_KBCLK,						// 	PS2 Keyboard Clock
-		HEX0,								// Hex dispays
+		HEX0,							// Hex dispays
 		HEX2,
 		HEX4,							
 		HEX5,
 	);
 
-	input	CLOCK_50;				//	50 MHz
+	input CLOCK_50;							//	50 MHz
 	input PS2_KBDAT;
 	input PS2_KBCLK;
 	wire [7:0] kb_scan_code;
@@ -48,9 +48,9 @@ module tictactoe
 	output	[9:0]	VGA_R;   				//	VGA Red[9:0]
 	output	[9:0]	VGA_G;	 				//	VGA Green[9:0]
 	output	[9:0]	VGA_B;   				//	VGA Blue[9:0]
-	output 	[6:0] HEX0;
+	output 	[6:0] 	HEX0;
 	output 	[6:0]	HEX2;
-	output 	[6:0] HEX4;
+	output 	[6:0] 	HEX4;
 	output 	[6:0]	HEX5;
 	
 	// Create wires for loads, write, draw, reset, and data
@@ -228,8 +228,8 @@ module tictactoe
 	);
 	
 	hex_display hex2(
-	.IN(pos[3:0]),
-	.OUT(HEX2[6:0])
+		.IN(pos[3:0]),
+		.OUT(HEX2[6:0])
 	);
 
 	hex_display hex4(
@@ -253,7 +253,7 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 
 	// Registers for each square of the grid
 	output reg [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9;
-	output [7:0] x_out;
+	output [6:0] x_out;
 	output [6:0] y_out;
 	output [2:0] col_out;
 
@@ -263,9 +263,11 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 
 	// Registers for counter, x, y positions and colour
 	reg [3:0] counter;
-	reg [7:0] x;
+	reg [6:0] x;
 	reg [6:0] y;
 	reg [2:0] c;
+	reg [6:0] x_temp;
+	reg [6:0] y_temp;
 
 	always @(posedge clock)
 	begin
@@ -284,9 +286,11 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 			s7 <= 2'b0;
 			s8 <= 2'b0;
 			s9 <= 2'b0;
-			x = 8'b00000000;
-			y = 7'b0000000;
-			c = 3'b000;
+			x <= 7'b0000000;
+			y <= 7'b0000000;
+			c <= 3'b000;
+			x_temp <= 0;
+			y_temp <= 0;
 		end
 		// Load data values
 		else
@@ -294,9 +298,13 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 			// ****might not need player registers or position register***
 			// Loading player choices in player registers
 			if (ld_p1)
+			begin
 				p1 <= data_in;
+			end
 			if (ld_p2)
+			begin	
 				p2 <= data_in;
+			end
 			// Loading square position in position register
 			if (ld_pos)
 				position <= pos;
@@ -304,64 +312,118 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 			if (ld_p1 || ld_p2)
 			begin
 				// Initialize all registers to 0
-				s1 = 4'b0000;
-				s2 = 4'b0000;
-				s3 = 4'b0000;
-				s4 = 4'b0000;
-				s5 = 4'b0000;
-				s6 = 4'b0000;
-				s7 = 4'b0000;
-				s8 = 4'b0000;
-				s9 = 4'b0000;
+				///////////////////////////////////////// do = instead of <= if it doesnt work
+				s1 <= 2'b0;
+				s2 <= 2'b0;
+				s3 <= 2'b0;
+				s4 <= 2'b0;
+				s5 <= 2'b0;
+				s6 <= 2'b0;
+				s7 <= 2'b0;
+				s8 <= 2'b0;
+				s9 <= 2'b0;
+
 				// Move value into appropriate square register by storing data_in
-				if(pos == 4'b0001)
-					s1 = data_in;
-				else if(pos == 4'b0010)
-					s2 = data_in;
-				else if(pos == 4'b0011)	
-					s3 = data_in;
-				else if(pos == 4'b0100)	
-					s4 = data_in;
-				else if(pos == 4'b0101)	
-					s5 = data_in;
-				else if(pos == 4'b0110)	
-					s6 = data_in;
-				else if(pos == 4'b0111)	
-					s7 = data_in;
-				else if(pos == 4'b1000)
-					s8 = data_in;
-				else if(pos == 4'b1001)	
-					s9 = data_in;
+				if (pos == 4'b0001)
+				begin
+					s1 <= data_in;
+					x_temp <= 4;
+					y_temp <= 4;
+				end
+				else if (pos == 4'b0010)
+				begin
+					s2 <= data_in;
+					x_temp <= 35;
+					y_temp <= 4;
+				end
+				else if (pos == 4'b0011)	
+				begin
+					s3 <= data_in;
+					x_temp <= 66;
+					y_temp <= 4;
+				end
+				else if (pos == 4'b0100)	
+				begin
+					s4 <= data_in;
+					x_temp <= 4;
+					y_temp <= 35;
+				end
+				else if (pos == 4'b0101)	
+				begin
+					s5 <= data_in;
+					x_temp <= 35;
+					y_temp <= 35;
+				end
+				else if (pos == 4'b0110)	
+				begin
+					s6 <= data_in;
+					x_temp <= 66;
+					y_temp <= 35;
+				end
+				else if (pos == 4'b0111)	
+				begin	
+					s7 <= data_in;
+					x_temp <= 4;
+					y_temp <= 66;
+				end
+				else if (pos == 4'b1000)
+				begin
+					s8 <= data_in;
+					x_temp <= 35;
+					y_temp <= 66;
+				end
+				else if (pos == 4'b1001)	
+				begin
+					s9 <= data_in;
+					x_temp <= 66;
+					y_temp <= 66;
+				end
+
+				// Assign colour based on tile
+				if (data_in == 2'b10)
+					// RED
+					col <= 3'b100;
+				else if (data_in == 2'b01)
+					// BLUE
+					col <= 3'b001;
 			end
 
 			if (ld_x)
-				x <= {1'b0, position};
+				x <= x_temp;
 			else if (ld_y)
-				y <= position;
+				y <= y_temp;
 			else if (ld_c)
-				c <= col;			
+				c <= col;
 		end
 	end
 
 	always @(posedge clock)
 	begin
 		if (!resetn)
-			x_out <= 7'b0;
-			y_out <= 6'b0;
-			col_out <= 3'b0;
+			// x_out <= 6'b0;
+			// y_out <= 6'b0;
+			// col_out <= 3'b0;
 			counter <= 5'b0000;
 		else if (drawEn)
 		begin
 			x_out <= x + counter[1:0];
 			y_out <= y + counter[4:2];
-			if (counter == 5'b11111)
+			// TRY THIS IF DOESNT WORK
+			// x_out <= x + counter;
+			// y_out <= y + counter;
+			if (counter == 5'b10101)
 				counter <= 5'b00000;
 			else
 				counter <= counter + 1'b1;
 		end
 	end
 
-
+	// TRY PUTTING HERE IF ABOVE DOESNT WORK
+	// assign x_out = x + counter[1:0];
+	// assign y_out = y + counter[4:2];
+	// // TRY THIS IF DOESNT WORK
+	// // assign x_out = x + counter;
+	// // assign y_out = y + counter;
 	assign col_out = c;
 
 
