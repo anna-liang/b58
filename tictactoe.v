@@ -12,10 +12,10 @@ choice of 'Red Tile' or 'Blue Tile' from the keyboard, and displays the game on 
 VGA monitor.
 
 */
-module tictactoe
-	(
+module tictactoe	(
 		CLOCK_50,						//	On Board 50 MHz
         SW,
+		  KEY,
 		// The ports below are for the VGA output
 		VGA_CLK,   						//	VGA Clock
 		VGA_HS,							//	VGA H_SYNC
@@ -27,10 +27,14 @@ module tictactoe
 		VGA_B,   						//	VGA Blue[9:0]
 		PS2_KBDAT,						//	PS2 Keyboard Data
 		PS2_KBCLK,						// 	PS2 Keyboard Clock
-		HEX0,							// Hex dispays
+		HEX0,
+		HEX1,		// Hex dispays
 		HEX2,
+		HEX3,
 		HEX4,							
 		HEX5,
+		HEX6,
+		HEX7
 	);
 
 	input CLOCK_50;							//	50 MHz
@@ -39,7 +43,7 @@ module tictactoe
 	wire [7:0] kb_scan_code;
 
 	input   [17:0]   SW;
-
+	input [3:0] KEY;
 	output			VGA_CLK;   				//	VGA Clock
 	output			VGA_HS;					//	VGA H_SYNC
 	output			VGA_VS;					//	VGA V_SYNC
@@ -48,10 +52,16 @@ module tictactoe
 	output	[9:0]	VGA_R;   				//	VGA Red[9:0]
 	output	[9:0]	VGA_G;	 				//	VGA Green[9:0]
 	output	[9:0]	VGA_B;   				//	VGA Blue[9:0]
+	
+	// HEX outputs
 	output 	[6:0] 	HEX0;
+	output 	[6:0] 	HEX1;
 	output 	[6:0]	HEX2;
+	output 	[6:0] 	HEX3;
 	output 	[6:0] 	HEX4;
 	output 	[6:0]	HEX5;
+	output 	[6:0]	HEX6;
+	output 	[6:0]	HEX7;
 	
 	// Create wires for loads, write, draw, reset, and data
 	reg go;
@@ -59,7 +69,7 @@ module tictactoe
 	reg resetn;
 	wire drawEn;
 	reg [1:0] data_in;
-	wire data_result;
+	wire [1:0] data_result;
 	wire ld_p1;
 	wire ld_p2;
 	wire ld_pos;
@@ -73,7 +83,7 @@ module tictactoe
 	wire [6:0] y;
 
 	// Create wires for keyboard module
-	wire [6:0] ASCII_value;
+	reg [7:0] ASCII_value;
 	wire kb_sc_ready;
 	wire kb_letter_case;
 	
@@ -100,7 +110,7 @@ module tictactoe
 		defparam VGA.RESOLUTION = "160x120";
 		defparam VGA.MONOCHROME = "FALSE";
 		defparam VGA.BITS_PER_COLOUR_CHANNEL = 1;
-		defparam VGA.BACKGROUND_IMAGE = "black.mif";
+		defparam VGA.BACKGROUND_IMAGE = "loss.mif";
 
 
 	// Instansiate Keyboard module
@@ -121,9 +131,9 @@ module tictactoe
         .letter_case(kb_letter_case)
     );
 
-	// Decode the ascii
-	always@(CLOCK_50)
-	begin		
+	
+ always@(CLOCK_50)
+	begin
 		// Data in is 10 or 01, default 00
 		case(ASCII_value)
 			8'h62 : data_in <= 2'b01; // Move type is B, data_in is 01
@@ -145,20 +155,28 @@ module tictactoe
 			8'h37 : pos <= 4'b0111; // Cell number 7, pos is 7 in binary
 			8'h38 : pos <= 4'b1000; // Cell number 8, pos is 8 in binary
 			8'h39 : pos <= 4'b1001; // Cell number 9, pos is 9 in binary
-			default : pos <= 4'b000; // Default to 0
+			default : pos <= 4'b0000; // Default to 0
 		endcase
 	end
 	
 	
 	always@(CLOCK_50)
 	begin		
-		// "GO" active high(Enter key)
-		case(ASCII_value)
-			8'h0A : go <= 1'b0;
-			default : go <= 1'b1; // Default to 0
-		endcase
+		// "GO" active low(Enter key)
+		if (!KEY[0])
+			go <= 1'b0;
+		else
+			go <= 1'b1;
 	end
-	
+	always@(CLOCK_50)
+	begin		
+		// "GO" active low(Enter key)
+		if (!KEY[1])
+			resetn <= 1'b0;
+		else
+			resetn <= 1'b1;
+	end
+
 	
     // Instansiate datapath
 	datapath d0(
@@ -182,7 +200,7 @@ module tictactoe
 		.x_out(x),
 	    .y_out(y),
 	    .col_out(colour),
-		.col(SW[9:7]),
+		//.col(SW[9:7]),
 	   	.ld_x(ld_x),
 	   	.ld_y(ld_y),
 	   	.ld_c(ld_c)
@@ -227,11 +245,16 @@ module tictactoe
 		.OUT(HEX0[6:0])
 	);
 	
-	hex_display hex2(
+	hex_display hex1(
 		.IN(pos[3:0]),
-		.OUT(HEX2[6:0])
+		.OUT(HEX1[6:0])
 	);
 
+	hex_display hex3(
+		.IN(go),
+		.OUT(HEX3[6:0])
+	);
+	
 	hex_display hex4(
 		.IN(ASCII_value[3:0]),
 		.OUT(HEX4[6:0])
@@ -242,26 +265,33 @@ module tictactoe
 		.OUT(HEX5[6:0])
 	);
 
+	hex_display hex6(
+		.IN(data_result[1:0]),
+		.OUT(HEX6[6:0])
+	);
+	
+
+	
 
 endmodule
 
-module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9, x_out, y_out, col_out, col, ld_x, ld_y, ld_c);
+module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9, x_out, y_out, col_out, ld_x, ld_y, ld_c);
 	input [1:0] data_in; // Red Tile (10) or Blue Tile (01)
 	input [3:0] pos; // Cell (1-9 in binary)
 	input ld_p1, ld_p2, ld_pos, drawEn, resetn, clock, ld_x, ld_y, ld_c;
-	input [2:0] col;
+	reg [2:0] col;
 
 	// Registers for each square of the grid
 	output reg [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9;
-	output [6:0] x_out;
-	output [6:0] y_out;
+	output reg [6:0] x_out;
+	output reg [6:0] y_out;
 	output [2:0] col_out;
 
 	// Input registers for player 1, player 2, and square on grid
 	reg [1:0] p1, p2;
 	reg [3:0] position;
 
-	// Registers for counter, x, y positions and colour
+	// Registers for couBACKGROUND_IMAGEnter, x, y positions and colour
 	reg [3:0] counter;
 	reg [6:0] x;
 	reg [6:0] y;
@@ -298,31 +328,15 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 			// ****might not need player registers or position register***
 			// Loading player choices in player registers
 			if (ld_p1)
-			begin
 				p1 <= data_in;
-			end
 			if (ld_p2)
-			begin	
 				p2 <= data_in;
-			end
 			// Loading square position in position register
 			if (ld_pos)
 				position <= pos;
 			// If a player has been loaded
 			if (ld_p1 || ld_p2)
 			begin
-				// Initialize all registers to 0
-				///////////////////////////////////////// do = instead of <= if it doesnt work
-				s1 <= 2'b0;
-				s2 <= 2'b0;
-				s3 <= 2'b0;
-				s4 <= 2'b0;
-				s5 <= 2'b0;
-				s6 <= 2'b0;
-				s7 <= 2'b0;
-				s8 <= 2'b0;
-				s9 <= 2'b0;
-
 				// Move value into appropriate square register by storing data_in
 				if (pos == 4'b0001)
 				begin
@@ -407,7 +421,7 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, drawEn, resetn, clock, s1, s
 		else if (drawEn)
 		begin
 			x_out <= x + counter[1:0];
-			y_out <= y + counter[4:2];
+			y_out <= y + counter[3:2];
 			// TRY THIS IF DOESNT WORK
 			// x_out <= x + counter;
 			// y_out <= y + counter;
@@ -638,7 +652,8 @@ module check_end(s1, s2, s3, s4, s5, s6, s7, s8, s9, turn, check, data_result);
 endmodule
 
 
-
+/* HEX Display module
+*/
 module hex_display(IN, OUT);
     input [3:0] IN;
 	 output reg [6:0] OUT;
