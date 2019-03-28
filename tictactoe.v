@@ -47,8 +47,8 @@ module tictactoe (
 	output 	[6:0]	HEX7;
 	
 	// Create wires for loads, write, draw, reset, and data
-	wire go;
-	assign go = ~KEY[0];
+	reg go;
+//	assign go = ~KEY[0];
 	wire writeEn;
 	wire resetn;
 	assign resetn = SW[11];
@@ -63,7 +63,8 @@ module tictactoe (
 	reg [3:0] pos;
 
 	// Create wires for keyboard module
-	reg [7:0] ASCII_value;
+	wire [7:0] ASCII_value;
+	reg [7:0] ASCII_val;
 	wire kb_sc_ready;
 	wire kb_letter_case;
 
@@ -92,34 +93,132 @@ module tictactoe (
         .scan_code(kb_scan_code),
         .letter_case(kb_letter_case)
     );
-
 	
- always@(CLOCK_50)
-	begin
-		// Data in is 10 or 01, default 00
-		case(ASCII_value)
-			8'h62 : data_in <= 2'b01; // Move type is B, data_in is 01
-			8'h72 : data_in <= 2'b10; // Move type is R, data_in is 10
-			default : data_in <= 2'b00; // Default to 0
-		endcase
-	end
 	
 	always@(CLOCK_50)
 	begin
-		// Pos is 4 bit 1-9, default 0
-		case (ASCII_value)
-			8'h31 : pos <= 4'b0001; // Cell number 1, pos is 1 in binary
-			8'h32 : pos <= 4'b0010; // Cell number 2, pos is 2 in binary
-			8'h33 : pos <= 4'b0011; // Cell number 3, pos is 3 in binary
-			8'h34 : pos <= 4'b0100; // Cell number 4, pos is 4 in binary
-			8'h35 : pos <= 4'b0101; // Cell number 5, pos is 5 in binary
-			8'h36 : pos <= 4'b0110; // Cell number 6, pos is 6 in binary
-			8'h37 : pos <= 4'b0111; // Cell number 7, pos is 7 in binary
-			8'h38 : pos <= 4'b1000; // Cell number 8, pos is 8 in binary
-			8'h39 : pos <= 4'b1001; // Cell number 9, pos is 9 in binary
-			default : pos <= 4'b0000; // Default to 0
-		endcase
+//		case(ASCII_value)
+//			ASCII_value : ASCII_val <= ASCII_value;
+//			default : ASCII_val <= 8'h00;
+//		endcase
+		
+
+		ASCII_val <= ASCII_value;
+	
+//		ASCII_val = ASCII_value;
+//		data_in <= 2'b00;
+//		pos <= 4'b000;
+//		go <= 1'b1;
+
+
+		if(ASCII_val == 8'h62)
+			begin
+			data_in <= 2'b01;
+			pos <= 4'b0000;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h72)
+			begin
+			data_in <= 2'b10;
+			pos <= 4'b0000;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h31)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b0001;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h32)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b0010;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h33)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b0011;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h34)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b0100;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h35)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b0101;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h36)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b0110;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h37)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b0111;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h38)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b1000;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h39)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b1001;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h0A)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b000;
+			go <= 1'b0;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h00)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b000;
+			go <= 1'b1;
+			end
 	end
+	
+	
+// always@(CLOCK_50)
+//	begin
+//		// Data in is 10 or 01, default 00
+//		case(ASCII_value)
+//			8'h62 : data_in <= 2'b01; // Move type is B, data_in is 01
+//			8'h72 : data_in <= 2'b10; // Move type is R, data_in is 10
+//			default : data_in <= 2'b00; // Default to 0
+//		endcase
+//	end
+//	
+//	always@(CLOCK_50)
+//	begin
+//		// Pos is 4 bit 1-9, default 0
+//		case (ASCII_value)
+//			8'h31 : pos <= 4'b0001; // Cell number 1, pos is 1 in binary
+//			8'h32 : pos <= 4'b0010; // Cell number 2, pos is 2 in binary
+//			8'h33 : pos <= 4'b0011; // Cell number 3, pos is 3 in binary
+//			8'h34 : pos <= 4'b0100; // Cell number 4, pos is 4 in binary
+//			8'h35 : pos <= 4'b0101; // Cell number 5, pos is 5 in binary
+//			8'h36 : pos <= 4'b0110; // Cell number 6, pos is 6 in binary
+//			8'h37 : pos <= 4'b0111; // Cell number 7, pos is 7 in binary
+//			8'h38 : pos <= 4'b1000; // Cell number 8, pos is 8 in binary
+//			8'h39 : pos <= 4'b1001; // Cell number 9, pos is 9 in binary
+//			default : pos <= 4'b0000; // Default to 0
+//		endcase
+//	end
 	/*
 	always@(CLOCK_50)
 	begin		
@@ -139,37 +238,38 @@ module tictactoe (
 			resetn <= 1'b1;
 	end
 	*/
-	always @(posedge CLOCK_50)
-	begin
-		rd_in = 28'b101111101011110000100000000;
-	end
+//	always @(posedge CLOCK_50)
+//	begin
+//		rd_in = 28'b101111101011110000100000000;
+//	end
+//
+//	always @(posedge CLOCK_50)
+//	begin
+//		hex_counter_enable <= (rd_out[27:0] == 28'b0) ? 1 : 0;
+//	end
+//
+//	always @(posedge CLOCK_50)
+//	begin
+//		if(drc_out == 2'b00)
+//		begin
+//			hex0pos = s1;
+//			hex1pos = s2;
+//			hex2pos = s3;module tictactoe (
 
-	always @(posedge CLOCK_50)
-	begin
-		hex_counter_enable <= (rd_out[27:0] == 28'b0) ? 1 : 0;
-	end
-
-	always @(posedge CLOCK_50)
-	begin
-		if(drc_out == 2'b00)
-		begin
-			hex0pos = s1;
-			hex1pos = s2;
-			hex2pos = s3;
-		end
-		else if(drc_out == 2'b01)
-		begin
-			hex0pos = s4;
-			hex1pos = s5;
-			hex2pos = s6;
-		end
-		else if(drc_out == 2'b10)
-		begin
-			hex0pos = s7;
-			hex1pos = s8;
-			hex2pos = s9;
-		end
-	end
+//		end
+//		else if(drc_out == 2'b01)
+//		begin
+//			hex0pos = s4;
+//			hex1pos = s5;
+//			hex2pos = s6;
+//		end
+//		else if(drc_out == 2'b10)
+//		begin
+//			hex0pos = s7;
+//			hex1pos = s8;
+//			hex2pos = s9;
+//		end
+//	end
 
 	// RATE DIVIDER AND DISPLAY COUNTER
 	rate_divider rd(
@@ -192,8 +292,8 @@ module tictactoe (
 		.ld_p2(ld_p2),
 		//.data_in(data_in),
 	    //.pos(pos),
-		 .data_in(SW[1:0]),
-	    .pos(SW[17:14]),
+		 .data_in(data_in),
+	    .pos(pos),
 	    .ld_pos(ld_pos),
 	    .resetn(resetn),
 	    .clock(CLOCK_50),
@@ -211,7 +311,7 @@ module tictactoe (
 
     // Instansiate FSM control
 	control c0(
-		.go(SW[9]),
+		.go(go),
 	   	.resetn(resetn),
 	   	.clock(CLOCK_50),
 	   	.check(check),
@@ -272,7 +372,7 @@ module tictactoe (
 	
 	// selected move
 	hex_display hex0(
-		.IN(SW[1:0]),
+		.IN(data_in),
 		.OUT(HEX0[6:0])
 	);
 	
@@ -296,7 +396,7 @@ module tictactoe (
 	
 	// selected position
 	hex_display hex4(
-		.IN(SW[17:14]),
+		.IN(pos),
 		.OUT(HEX4[6:0])
 	);
 	
@@ -313,7 +413,7 @@ module tictactoe (
 	);
 	// go
 	hex_display hex7(
-		.IN(SW[9]),
+		.IN(go),
 		.OUT(HEX7[6:0])
 	);
 	
