@@ -35,15 +35,7 @@ module tictactoe (
 
 	input   [17:0]   SW;
 	input [3:0] KEY;
-	output			VGA_CLK;   				//	VGA Clock
-	output			VGA_HS;					//	VGA H_SYNC
-	output			VGA_VS;					//	VGA V_SYNC
-	output			VGA_BLANK_N;				//	VGA BLANK
-	output			VGA_SYNC_N;				//	VGA SYNC
-	output	[9:0]	VGA_R;   				//	VGA Red[9:0]
-	output	[9:0]	VGA_G;	 				//	VGA Green[9:0]
-	output	[9:0]	VGA_B;   				//	VGA Blue[9:0]
-	
+
 	// HEX outputs
 	output 	[6:0] 	HEX0;
 	output 	[6:0] 	HEX1;
@@ -72,6 +64,12 @@ module tictactoe (
 	reg [7:0] ASCII_value;
 	wire kb_sc_ready;
 	wire kb_letter_case;
+
+	// For cycling through hex displays
+	wire [1:0] drc_out;
+	wire [27:0] rd_out;
+	reg [27:0] rd_in;
+	wire [1:0] hex0pos, hex1pos, hex2pos;
 
 	// Instansiate Keyboard module
     keyboard kd(
@@ -119,7 +117,6 @@ module tictactoe (
 		endcase
 	end
 	
-	
 	always@(CLOCK_50)
 	begin		
 		// "GO" active low(Enter key)
@@ -128,16 +125,63 @@ module tictactoe (
 		else
 			go <= 1'b1;
 	end
+
 	always@(CLOCK_50)
 	begin		
-		// "GO" active low(Enter key)
+		// "resetn" active low(Enter key)
 		if (!KEY[1])
 			resetn <= 1'b0;
 		else
 			resetn <= 1'b1;
 	end
-
 	
+	always @(posedge CLOCK_50)
+	begin
+		rd_in = 28'b101111101011110000100000000;
+	end
+
+	always @(posedge CLOCK_50)
+	begin
+		hex_counter_enable <= (rd_out[27:0] == 28'b0) ? 1 : 0;
+	end
+
+	always @(posedge CLOCK_50)
+	begin
+		if(drc_out == 2'b00)
+		begin
+			hex0pos = s1;
+			hex1pos = s2;
+			hex2pos = s3;
+		end
+		else if(drc_out == 2'b01)
+		begin
+			hex0pos = s4;
+			hex1pos = s5;
+			hex2pos = s6;
+		end
+		else if(drc_out == 2'b10)
+		begin
+			hex0pos = s7;
+			hex1pos = s8;
+			hex2pos = s9;
+		end
+	end
+
+	// RATE DIVIDER AND DISPLAY COUNTER
+	rate_divider rd(
+		.q(rd_out[27:0]),
+		.d(rd_in[27:0]),
+		.clock(CLOCK_50),
+		.clear_b(resetn),
+	);
+
+	display_row_counter drc(
+		.q(drc_out[1:0]),
+		.clock(CLOCK_50),
+		.clear_b(resetn),
+		.enable(hex_counter_enable)
+	);
+
     // Instansiate datapath
 	datapath d0(
 		.ld_p1(ld_p1),
@@ -155,7 +199,7 @@ module tictactoe (
 	    .s6(s6),
 	    .s7(s7),
 	    .s8(s8),
-	    .s9(s9),
+	    .s9(s9)
 	);
 
     // Instansiate FSM control
@@ -166,8 +210,7 @@ module tictactoe (
 	   	.check(check),
 	   	.ld_p1(ld_p1),
 	   	.ld_p2(ld_p2),
-	   	.ld_pos(ld_pos),
-	   	.writeEn(writeEn)
+	   	.ld_pos(ld_pos)
 	);
 
 	// Instansiate checking
@@ -185,16 +228,21 @@ module tictactoe (
 	    .check(check),
 	    .data_result(data_result)
 	);
-    
+
 	// DISPLAY KEYBOARD INPUT TO HEX4 AND HEX5
 	hex_display hex0(
-		.IN(data_in[1:0]),
+		.IN(hex0pos),
 		.OUT(HEX0[6:0])
 	);
 	
 	hex_display hex1(
-		.IN(pos[3:0]),
+		.IN(hex1pos),
 		.OUT(HEX1[6:0])
+	);
+
+	hex_display hex2(
+		.IN(hex2pos),
+		.OUT(HEX2[6:0])
 	);
 
 	hex_display hex3(
@@ -216,6 +264,36 @@ module tictactoe (
 		.IN(data_result[1:0]),
 		.OUT(HEX6[6:0])
 	);
+endmodule
+
+module rate_divider(q, d, clock, clear_b);
+	input wire [27:0] d;
+	input clock;
+	input clear_b;
+	output reg [27:0] q;
+
+	always @(posedge clock)
+	begin
+		if(clear_b == 1'b0 || q == 28'b0)
+			q <= d;
+		else
+			q <= q - 1'b1;
+	end
+endmodule
+
+module display_row_counter(q, clock, clear_b, enable);
+	input clock;
+	input clear_b;
+	input enable;
+	output reg [3:0] q;
+
+	always @(posedge clock)
+	begin
+		if(clear_b == 1'b0 || q == 4'b1111)
+			q <= 1'b0;
+		else if(enable == 1'b1)
+			q <= q + 1'b1;
+	end
 endmodule
 
 module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, resetn, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9);
@@ -287,10 +365,10 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, resetn, clock, s1, s2, s3, s
 	end
 endmodule
 
-module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, writeEn, turn);
+module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, turn);
 	// Declare inputs, outputs, wires, and regs
 	input go, resetn, clock, check;
-	output reg ld_p1, ld_p2, ld_pos, writeEn;
+	output reg ld_p1, ld_p2, ld_pos;
 	output reg [1:0] turn;
 	
 	reg [5:0] curr_state, next_state;
@@ -333,7 +411,6 @@ module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, writeEn, turn);
 		ld_p1 = 1'b0;
 		ld_p2 = 1'b0;
 		ld_pos = 1'b0;
-		writeEn = 1'b0;
 		turn = 2'b00;
 		case (curr_state)
 			S_LOAD_P1_POS:	// Load player 1's square
