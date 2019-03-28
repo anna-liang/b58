@@ -47,9 +47,11 @@ module tictactoe (
 	output 	[6:0]	HEX7;
 	
 	// Create wires for loads, write, draw, reset, and data
-	reg go;
+	wire go;
+	assign go = ~KEY[0];
 	wire writeEn;
-	reg resetn;
+	wire resetn;
+	assign resetn = SW[11];
 	wire drawEn;
 	reg [1:0] data_in;
 	wire [1:0] data_result;
@@ -69,7 +71,9 @@ module tictactoe (
 	wire [1:0] drc_out;
 	wire [27:0] rd_out;
 	reg [27:0] rd_in;
-	wire [1:0] hex0pos, hex1pos, hex2pos;
+	reg [1:0] hex0pos, hex1pos, hex2pos;
+	reg hex_counter_enable;
+	wire [3:0] position;
 
 	// Instansiate Keyboard module
     keyboard kd(
@@ -116,7 +120,7 @@ module tictactoe (
 			default : pos <= 4'b0000; // Default to 0
 		endcase
 	end
-	
+	/*
 	always@(CLOCK_50)
 	begin		
 		// "GO" active low(Enter key)
@@ -134,7 +138,7 @@ module tictactoe (
 		else
 			resetn <= 1'b1;
 	end
-	
+	*/
 	always @(posedge CLOCK_50)
 	begin
 		rd_in = 28'b101111101011110000100000000;
@@ -186,8 +190,10 @@ module tictactoe (
 	datapath d0(
 		.ld_p1(ld_p1),
 		.ld_p2(ld_p2),
-		.data_in(data_in),
-	    .pos(pos),
+		//.data_in(data_in),
+	    //.pos(pos),
+		 .data_in(SW[1:0]),
+	    .pos(SW[17:14]),
 	    .ld_pos(ld_pos),
 	    .resetn(resetn),
 	    .clock(CLOCK_50),
@@ -199,18 +205,20 @@ module tictactoe (
 	    .s6(s6),
 	    .s7(s7),
 	    .s8(s8),
-	    .s9(s9)
+	    .s9(s9),
+		 .position(position)
 	);
 
     // Instansiate FSM control
 	control c0(
-		.go(go),
+		.go(SW[9]),
 	   	.resetn(resetn),
 	   	.clock(CLOCK_50),
 	   	.check(check),
 	   	.ld_p1(ld_p1),
 	   	.ld_p2(ld_p2),
-	   	.ld_pos(ld_pos)
+	   	.ld_pos(ld_pos),
+			.turn(turn[1:0])
 	);
 
 	// Instansiate checking
@@ -224,12 +232,13 @@ module tictactoe (
 	    .s7(s7),
 	    .s8(s8),
 	    .s9(s9),
-	    .turn(turn),
+	    .turn(turn[1:0]),
 	    .check(check),
 	    .data_result(data_result)
 	);
 
 	// DISPLAY KEYBOARD INPUT TO HEX4 AND HEX5
+	/*
 	hex_display hex0(
 		.IN(hex0pos),
 		.OUT(HEX0[6:0])
@@ -259,11 +268,55 @@ module tictactoe (
 		.IN(ASCII_value[6:4]),
 		.OUT(HEX5[6:0])
 	);
+	*/
+	
+	// selected move
+	hex_display hex0(
+		.IN(SW[1:0]),
+		.OUT(HEX0[6:0])
+	);
+	
+	// move in square 1
+	hex_display hex1(
+		.IN(s1[1:0]),
+		.OUT(HEX1[6:0])
+	);
 
+	// move in square 2
+	hex_display hex2(
+		.IN(s1[1:0]),
+		.OUT(HEX2[6:0])
+	);
+	
+	// move in square 3
+	hex_display hex3(
+		.IN(s1[1:0]),
+		.OUT(HEX3[6:0])
+	);
+	
+	// selected position
+	hex_display hex4(
+		.IN(SW[17:14]),
+		.OUT(HEX4[6:0])
+	);
+	
+	// position in register
+	hex_display hex5(
+		.IN(position[3:0]),
+		.OUT(HEX5[6:0])
+	);
+	
+	// result
 	hex_display hex6(
-		.IN(data_result[1:0]),
+		.IN(turn[1:0]),
 		.OUT(HEX6[6:0])
 	);
+	// go
+	hex_display hex7(
+		.IN(SW[9]),
+		.OUT(HEX7[6:0])
+	);
+	
 endmodule
 
 module rate_divider(q, d, clock, clear_b);
@@ -296,7 +349,7 @@ module display_row_counter(q, clock, clear_b, enable);
 	end
 endmodule
 
-module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, resetn, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9);
+module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, resetn, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9, position);
 	input [1:0] data_in; // Red Tile (10) or Blue Tile (01)
 	input [3:0] pos; // Cell (1-9 in binary)
 	input ld_p1, ld_p2, ld_pos, resetn, clock;
@@ -306,7 +359,7 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, resetn, clock, s1, s2, s3, s
 
 	// Input registers for player 1, player 2, and square on grid
 	reg [1:0] p1, p2;
-	reg [3:0] position;
+	output reg [3:0] position;
 
 	always @(posedge clock)
 	begin
@@ -333,7 +386,7 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, resetn, clock, s1, s2, s3, s
 			// Loading player choices in player registers
 			if (ld_p1)
 				p1 <= data_in;
-			if (ld_p2)
+			else if (ld_p2)
 				p2 <= data_in;
 			// Loading square position in position register
 			if (ld_pos)
@@ -342,23 +395,23 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, resetn, clock, s1, s2, s3, s
 			if (ld_p1 || ld_p2)
 			begin
 				// Move value into appropriate square register by storing data_in
-				if (pos == 4'b0001)
+				if (position == 4'b0001)
 					s1 <= data_in;
-				else if (pos == 4'b0010)
+				else if (position == 4'b0010)
 					s2 <= data_in;
-				else if (pos == 4'b0011)	
+				else if (position == 4'b0011)	
 					s3 <= data_in;
-				else if (pos == 4'b0100)	
+				else if (position == 4'b0100)	
 					s4 <= data_in;
-				else if (pos == 4'b0101)	
+				else if (position == 4'b0101)	
 					s5 <= data_in;
-				else if (pos == 4'b0110)	
+				else if (position == 4'b0110)	
 					s6 <= data_in;
-				else if (pos == 4'b0111)	
+				else if (position == 4'b0111)	
 					s7 <= data_in;
-				else if (pos == 4'b1000)
+				else if (position == 4'b1000)
 					s8 <= data_in;
-				else if (pos == 4'b1001)	
+				else if (position == 4'b1001)	
 					s9 <= data_in;
 			end
 		end
