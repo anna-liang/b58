@@ -24,7 +24,9 @@ module tictactoe (
 		HEX4,							
 		HEX5,
 		HEX6,
-		HEX7
+		HEX7,
+		LEDR,
+		LEDG
 	);
 
 	input CLOCK_50;							//	50 MHz
@@ -75,6 +77,10 @@ module tictactoe (
 	reg [1:0] hex0pos, hex1pos, hex2pos;
 	reg hex_counter_enable;
 	wire [3:0] position;
+
+	// For scores for both players
+	reg [7:0] p1_score;
+	reg [7:0] p2_score;
 
 	// Instansiate Keyboard module
     keyboard kd(
@@ -132,6 +138,19 @@ module tictactoe (
 			hex2pos = s9;
 		end
 	end
+
+	// Add scores when theres a winner
+	always @(posedge CLOCK_50)
+	begin
+		if(winner == 2'b01)
+			p1_score <= p1_score + 1;
+		else if(winner == 2'b10)
+			p2_score <= p2_score + 1;
+	end
+
+	// Assign scores to leds
+	assign LEDR[7:0] = p1_score[7:0];
+	assign LEDG[7:0] = p2_score[7:0];
 
 	// RATE DIVIDER AND DISPLAY COUNTER
 	rate_divider rd(
