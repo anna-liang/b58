@@ -51,12 +51,13 @@ module tictactoe (
 	wire go;
 	assign go = SW[16];
 	wire writeEn;
-	wire resetn;
-	assign resetn = SW[17];
+	wire reset_game;
+	wire reset_all;
+	assign reset_all = SW[17];
 	wire drawEn;
 	wire [1:0] move;
 	// assign move = SW[1:0];
-	wire [1:0] winner;
+	wire [1:0] win_state;
 	wire ld_p1;
 	wire ld_p2;
 	wire ld_pos;
@@ -85,7 +86,7 @@ module tictactoe (
 	// Instansiate Keyboard module
     keyboard kd(
         .clk(CLOCK_50),
-        .reset(resetn),
+        .reset(reset_game),
         .ps2d(PS2_KBDAT),
         .ps2c(PS2_KBCLK),
         .scan_code(kb_scan_code),
@@ -142,9 +143,9 @@ module tictactoe (
 	// Add scores when theres a winner
 	always @(posedge CLOCK_50)
 	begin
-		if(winner == 2'b01)
+		if(win_state == 2'b01)
 			p1_score <= p1_score + 1;
-		else if(winner == 2'b10)
+		else if(win_state == 2'b10)
 			p2_score <= p2_score + 1;
 	end
 
@@ -152,18 +153,39 @@ module tictactoe (
 	assign LEDR[7:0] = p1_score[7:0];
 	assign LEDG[7:0] = p2_score[7:0];
 
+	// Reset game on win/tie
+	always @(posedge CLOCK_50)
+	begin
+		if(win_state == 2'b01 || win_state == 2'b10 || win_state == 2'b11)
+			reset_game = 0;
+		else
+			reset_game = 1;
+	end
+
+	// Reset scores/game on input
+	always @(posedge CLOCK_50)
+	begin
+		if(reset_all == 1'b0)
+		begin
+			p1_score <= 0;
+			p2_score <= 0;
+			reset_all = 1;
+			reset_game = 1;
+		end
+	end
+
 	// RATE DIVIDER AND DISPLAY COUNTER
 	rate_divider rd(
-		.q(rd_out[27:0]),
-		.d(rd_in[27:0]),
+		.out(rd_out[27:0]),
+		.in(rd_in[27:0]),
 		.clock(CLOCK_50),
-		.clear_b(resetn),
+		.clear_b(reset_game),
 	);
 
 	display_row_counter drc(
-		.q(drc_out[2:0]),
+		.out(drc_out[2:0]),
 		.clock(CLOCK_50),
-		.clear_b(resetn),
+		.clear_b(reset_game),
 		.enable(hex_counter_enable)
 	);
 
@@ -174,7 +196,7 @@ module tictactoe (
 		.move(move),
 	    .pos(pos),
 	    .ld_pos(ld_pos),
-	    .resetn(resetn),
+	    .reset_game(reset_game),
 	    .clock(CLOCK_50),
 	    .s1(s1),
 	    .s2(s2),
@@ -191,7 +213,7 @@ module tictactoe (
     // Instansiate FSM control
 	control c0(
 		.go(go),
-	   	.resetn(resetn),
+	   	.reset_game(reset_game),
 	   	.clock(CLOCK_50),
 	   	.check(check),
 	   	.ld_p1(ld_p1),
@@ -213,7 +235,7 @@ module tictactoe (
 	    .s9(s9),
 	    .turn(turn[1:0]),
 	    .check(check),
-	    .winner(winner)
+	    .win_state(win_state)
 	);
 
 	// DISPLAY KEYBOARD INPUT TO HEX4 AND HEX5
@@ -286,46 +308,46 @@ module tictactoe (
 	
 	// winner
 	hex_display hex7(
-		.IN(winner[1:0]),
+		.IN(win_state[1:0]),
 		.OUT(HEX7[6:0])
 	);
 	
 endmodule
 
-module rate_divider(q, d, clock, clear_b);
-	input wire [27:0] d;
+module rate_divider(out, in, clock, clear_b);
+	input wire [27:0] in;
 	input clock;
 	input clear_b;
-	output reg [27:0] q;
+	output reg [27:0] out;
 
 	always @(posedge clock)
 	begin
-		if(clear_b == 1'b0 || q == 28'b0)
-			q <= d;
+		if(clear_b == 1'b0 || out == 28'b0)
+			out <= in;
 		else
-			q <= q - 1'b1;
+			out <= out - 1'b1;
 	end
 endmodule
 
-module display_row_counter(q, clock, clear_b, enable);
+module display_row_counter(out, clock, clear_b, enable);
 	input clock;
 	input clear_b;
 	input enable;
-	output reg [2:0] q;
+	output reg [2:0] out;
 
 	always @(posedge clock)
 	begin
-		if(clear_b == 1'b0 || q == 3'b100)
-			q <= 1'b1;
+		if(clear_b == 1'b0 || out == 3'b100)
+			out <= 1'b1;
 		else if(enable == 1'b1)
-			q <= q + 1'b1;
+			out <= out + 1'b1;
 	end
 endmodule
 
-module datapath(ld_p1, ld_p2, move, pos, ld_pos, resetn, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9, position);
+module datapath(ld_p1, ld_p2, move, pos, ld_pos, reset_game, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9, position);
 	input [1:0] move; // O (10) or X (01)
 	input [3:0] pos; // Cell (1-9 in binary)
-	input ld_p1, ld_p2, ld_pos, resetn, clock;
+	input ld_p1, ld_p2, ld_pos, reset_game, clock;
 
 	// Registers for each square of the grid
 	output reg [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9;
@@ -337,7 +359,7 @@ module datapath(ld_p1, ld_p2, move, pos, ld_pos, resetn, clock, s1, s2, s3, s4, 
 	always @(posedge clock)
 	begin
 		// Reset all registers
-		if (!resetn)
+		if (!reset_game)
 		begin
 			p1 <= 2'b0;
 			p2 <= 2'b0;
@@ -390,9 +412,9 @@ module datapath(ld_p1, ld_p2, move, pos, ld_pos, resetn, clock, s1, s2, s3, s4, 
 	end
 endmodule
 
-module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, turn);
+module control(go, reset_game, clock, check, ld_p1, ld_p2, ld_pos, turn);
 	// Declare inputs, outputs, wires, and regs
-	input go, resetn, clock, check;
+	input go, reset_game, clock, check;
 	output reg ld_p1, ld_p2, ld_pos;
 	output reg [1:0] turn;
 	
@@ -514,7 +536,7 @@ module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, turn);
 	// Move to the next state on the next positive clock edge
 	always@(posedge clock)
 	begin: state_FFs
-        if(!resetn)
+        if(!reset_game)
             curr_state <= S_LOAD_P1_POS;	// Move back to loading player 1's square if reset
         else
             curr_state <= next_state; 	// Otherwise, move to the next state
@@ -524,10 +546,10 @@ endmodule
 /* Checks the end conditions of the game.
 Determines if there are three tiles in a row, if there is a tie, or if the game continues
 */
-module check_end(s1, s2, s3, s4, s5, s6, s7, s8, s9, turn, check, winner);
+module check_end(s1, s2, s3, s4, s5, s6, s7, s8, s9, turn, check, win_state);
 	input [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9, turn;
 	output reg check;
-	output reg [1:0] winner;
+	output reg [1:0] win_state;
 	
 	// Temp wires for end combinations
 	wire [1:0] t1, t2, t3, t4, t5, t6, t7, t8;
@@ -561,10 +583,10 @@ module check_end(s1, s2, s3, s4, s5, s6, s7, s8, s9, turn, check, winner);
 			check <= 1'b1;
 			// If it was player 1's turn, they lose
 			if (turn == 2'b01)
-				winner <= 2'b10;
+				win_state <= 2'b10;
 			// If it was player 2's turn, they lose
 			else if (turn == 2'b10)
-				winner <= 2'b01;
+				win_state <= 2'b01;
 		end
 		// Otherwise, we have 00 for everything
 		// Either the game has not ended yet, or the game ended in a tie
@@ -576,14 +598,14 @@ module check_end(s1, s2, s3, s4, s5, s6, s7, s8, s9, turn, check, winner);
 			begin
 				// Set everything to low
 				check <= 1'b0;
-				winner <= 2'b00;
+				win_state <= 2'b00;
 			end
 			// Otherwise, we have a tie
 			else
 			begin
 				// Set everything to high
 				check <= 1'b1;
-				winner <= 2'b11;
+				win_state <= 2'b11;
 			end
 		end
 	end
