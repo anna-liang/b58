@@ -47,66 +47,229 @@ module tictactoe (
 	output 	[6:0]	HEX7;
 	
 	// Create wires for loads, write, draw, reset, and data
-	wire go;
-	assign go = SW[16];
+	reg go;
+//	assign go = ~KEY[0];
 	wire writeEn;
 	wire resetn;
-	assign resetn = SW[17];
+	assign resetn = SW[11];
 	wire drawEn;
-	wire [1:0] data_in;
-	assign data_in = SW[1:0];
+	reg [1:0] data_in;
 	wire [1:0] data_result;
 	wire ld_p1;
 	wire ld_p2;
 	wire ld_pos;
 	wire check;
 	wire [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9, turn;
-	wire [3:0] pos;
-	assign pos = SW[7:4];
+	reg [3:0] pos;
 
+	// Create wires for keyboard module
+	wire [7:0] ASCII_value;
+	reg [7:0] ASCII_val;
+	wire kb_sc_ready;
+	wire kb_letter_case;
 
 	// For cycling through hex displays
-	wire [2:0] drc_out;
+	wire [1:0] drc_out;
 	wire [27:0] rd_out;
 	reg [27:0] rd_in;
 	reg [1:0] hex0pos, hex1pos, hex2pos;
 	reg hex_counter_enable;
 	wire [3:0] position;
-	
 
+	// Instansiate Keyboard module
+    keyboard kd(
+        .clk(CLOCK_50),
+        .reset(resetn),
+        .ps2d(PS2_KBDAT),
+        .ps2c(PS2_KBCLK),
+        .scan_code(kb_scan_code),
+        .scan_code_ready(kb_sc_ready),
+        .letter_case_out(kb_letter_case)
+    );
+
+    // Instansiate ascii converter
+    keytoascii ascii(
+        .ascii_code(ASCII_value),
+        .scan_code(kb_scan_code),
+        .letter_case(kb_letter_case)
+    );
 	
 	
-	always @(posedge CLOCK_50)
+	always@(CLOCK_50)
 	begin
-		rd_in = 28'b101111101011110000100000000;
+//		case(ASCII_value)
+//			ASCII_value : ASCII_val <= ASCII_value;
+//			default : ASCII_val <= 8'h00;
+//		endcase
+		
+
+		ASCII_val <= ASCII_value;
+	
+//		ASCII_val = ASCII_value;
+//		data_in <= 2'b00;
+//		pos <= 4'b000;
+//		go <= 1'b1;
+
+
+		if(ASCII_val == 8'h62)
+			begin
+			data_in <= 2'b01;
+			pos <= 4'b0000;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h72)
+			begin
+			data_in <= 2'b10;
+			pos <= 4'b0000;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h31)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b0001;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h32)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b0010;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h33)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b0011;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h34)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b0100;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h35)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b0101;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h36)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b0110;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h37)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b0111;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h38)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b1000;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h39)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b1001;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h0A)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b000;
+			go <= 1'b0;
+			ASCII_val <= 8'h00;
+			end
+		else if(ASCII_val == 8'h00)
+			begin
+			data_in <= 2'b00;
+			pos <= 4'b000;
+			go <= 1'b1;
+			end
+	end
+	
+	
+// always@(CLOCK_50)
+//	begin
+//		// Data in is 10 or 01, default 00
+//		case(ASCII_value)
+//			8'h62 : data_in <= 2'b01; // Move type is B, data_in is 01
+//			8'h72 : data_in <= 2'b10; // Move type is R, data_in is 10
+//			default : data_in <= 2'b00; // Default to 0
+//		endcase
+//	end
+//	
+//	always@(CLOCK_50)
+//	begin
+//		// Pos is 4 bit 1-9, default 0
+//		case (ASCII_value)
+//			8'h31 : pos <= 4'b0001; // Cell number 1, pos is 1 in binary
+//			8'h32 : pos <= 4'b0010; // Cell number 2, pos is 2 in binary
+//			8'h33 : pos <= 4'b0011; // Cell number 3, pos is 3 in binary
+//			8'h34 : pos <= 4'b0100; // Cell number 4, pos is 4 in binary
+//			8'h35 : pos <= 4'b0101; // Cell number 5, pos is 5 in binary
+//			8'h36 : pos <= 4'b0110; // Cell number 6, pos is 6 in binary
+//			8'h37 : pos <= 4'b0111; // Cell number 7, pos is 7 in binary
+//			8'h38 : pos <= 4'b1000; // Cell number 8, pos is 8 in binary
+//			8'h39 : pos <= 4'b1001; // Cell number 9, pos is 9 in binary
+//			default : pos <= 4'b0000; // Default to 0
+//		endcase
+//	end
+	/*
+	always@(CLOCK_50)
+	begin		
+		// "GO" active low(Enter key)
+		if (!KEY[0])
+			go <= 1'b0;
+		else
+			go <= 1'b1;
 	end
 
-	always @(posedge CLOCK_50)
-	begin
-		hex_counter_enable <= (rd_out[27:0] == 28'b0) ? 1 : 0;
+	always@(CLOCK_50)
+	begin		
+		// "resetn" active low(Enter key)
+		if (!KEY[1])
+			resetn <= 1'b0;
+		else
+			resetn <= 1'b1;
 	end
+	*/
+//	always @(posedge CLOCK_50)
+//	begin
+//		rd_in = 28'b101111101011110000100000000;
+//	end
+//
+//	always @(posedge CLOCK_50)
+//	begin
+//		hex_counter_enable <= (rd_out[27:0] == 28'b0) ? 1 : 0;
+//	end
+//
+//	always @(posedge CLOCK_50)
+//	begin
+//		if(drc_out == 2'b00)
+//		begin
+//			hex0pos = s1;
+//			hex1pos = s2;
+//			hex2pos = s3;module tictactoe (
 
-	always @(posedge CLOCK_50)
-	begin
-		if(drc_out == 3'b001)
-		begin
-			hex0pos = s1;
-			hex1pos = s2;
-			hex2pos = s3;
-		end
-		else if(drc_out == 3'b010)
-		begin
-			hex0pos = s4;
-			hex1pos = s5;
-			hex2pos = s6;
-		end
-		else if(drc_out == 3'b011)
-		begin
-			hex0pos = s7;
-			hex1pos = s8;
-			hex2pos = s9;
-		end
-	end
+//		end
+//		else if(drc_out == 2'b01)
+//		begin
+//			hex0pos = s4;
+//			hex1pos = s5;
+//			hex2pos = s6;
+//		end
+//		else if(drc_out == 2'b10)
+//		begin
+//			hex0pos = s7;
+//			hex1pos = s8;
+//			hex2pos = s9;
+//		end
+//	end
 
 	// RATE DIVIDER AND DISPLAY COUNTER
 	rate_divider rd(
@@ -117,7 +280,7 @@ module tictactoe (
 	);
 
 	display_row_counter drc(
-		.q(drc_out[2:0]),
+		.q(drc_out[1:0]),
 		.clock(CLOCK_50),
 		.clear_b(resetn),
 		.enable(hex_counter_enable)
@@ -127,6 +290,8 @@ module tictactoe (
 	datapath d0(
 		.ld_p1(ld_p1),
 		.ld_p2(ld_p2),
+		//.data_in(data_in),
+	    //.pos(pos),
 		 .data_in(data_in),
 	    .pos(pos),
 	    .ld_pos(ld_pos),
@@ -173,9 +338,9 @@ module tictactoe (
 	);
 
 	// DISPLAY KEYBOARD INPUT TO HEX4 AND HEX5
-
+	/*
 	hex_display hex0(
-		.IN(hex2pos),
+		.IN(hex0pos),
 		.OUT(HEX0[6:0])
 	);
 	
@@ -185,64 +350,70 @@ module tictactoe (
 	);
 
 	hex_display hex2(
-		.IN(hex0pos),
+		.IN(hex2pos),
 		.OUT(HEX2[6:0])
 	);
-	
+
 	hex_display hex3(
-		.IN(drc_out[1:0]),
+		.IN(go),
 		.OUT(HEX3[6:0])
 	);
 	
-	
-	// selected move
 	hex_display hex4(
-		.IN(data_in[1:0]),
+		.IN(ASCII_value[3:0]),
 		.OUT(HEX4[6:0])
 	);
 	
-	/*
-	// move in square 1
+	hex_display hex5(
+		.IN(ASCII_value[6:4]),
+		.OUT(HEX5[6:0])
+	);
+	*/
+	
+	// selected move
 	hex_display hex0(
-		.IN(s3[1:0]),
+		.IN(data_in),
 		.OUT(HEX0[6:0])
+	);
+	
+	// move in square 1
+	hex_display hex1(
+		.IN(s1[1:0]),
+		.OUT(HEX1[6:0])
 	);
 
 	// move in square 2
-	hex_display hex1(
-		.IN(s2[1:0]),
-		.OUT(HEX1[6:0])
-	);
-	
-	// move in square 3
 	hex_display hex2(
 		.IN(s1[1:0]),
 		.OUT(HEX2[6:0])
 	);
-	*/
 	
-	// selected position
-	hex_display hex5(
-		.IN(pos[3:0]),
-		.OUT(HEX5[6:0])
+	// move in square 3
+	hex_display hex3(
+		.IN(s1[1:0]),
+		.OUT(HEX3[6:0])
 	);
 	
-	/*
+	// selected position
+	hex_display hex4(
+		.IN(pos),
+		.OUT(HEX4[6:0])
+	);
+	
 	// position in register
 	hex_display hex5(
 		.IN(position[3:0]),
 		.OUT(HEX5[6:0])
 	);
-	*/
 	
-	// turn
+	// result
 	hex_display hex6(
 		.IN(turn[1:0]),
 		.OUT(HEX6[6:0])
 	);
-	// winner
+	// go
 	hex_display hex7(
-		.IN(data_result[1:0]),
+		.IN(go),
 		.OUT(HEX7[6:0])
 	);
 	
@@ -267,12 +438,12 @@ module display_row_counter(q, clock, clear_b, enable);
 	input clock;
 	input clear_b;
 	input enable;
-	output reg [2:0] q;
+	output reg [3:0] q;
 
 	always @(posedge clock)
 	begin
-		if(clear_b == 1'b0 || q == 3'b100)
-			q <= 1'b1;
+		if(clear_b == 1'b0 || q == 4'b1111)
+			q <= 1'b0;
 		else if(enable == 1'b1)
 			q <= q + 1'b1;
 	end
@@ -389,83 +560,25 @@ module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, turn);
 	
 	always @(*)
 	begin: signals
-//		// Set all to a default 0
-//		ld_p1 = 1'b0;
-//		ld_p2 = 1'b0;
-//		ld_pos = 1'b0;
-//		turn = 2'b00;
+		// Set all to a default 0
+		ld_p1 = 1'b0;
+		ld_p2 = 1'b0;
+		ld_pos = 1'b0;
+		turn = 2'b00;
 		case (curr_state)
 			S_LOAD_P1_POS:	// Load player 1's square
-				begin
-				ld_p1 = 1'b0;
-				ld_p2 = 1'b0;
 				ld_pos = 1'b1;
-				turn = 2'b01;
-				end
-			S_LOAD_P1_POS_WAIT:
-				begin
-				ld_p1 = 1'b0;
-				ld_p2 = 1'b0;
-				ld_pos = 1'b1;
-				turn = 2'b01;
-				end
 			S_LOAD_P1: // Load player 1's move
-				begin
 				ld_p1 = 1'b1;
-				ld_p2 = 1'b0;
-				ld_pos = 1'b0;
-				turn = 2'b01;
-				end
-			S_LOAD_P1_WAIT:
-				begin
-				ld_p1 = 1'b1;
-				ld_p2 = 1'b0;
-				ld_pos = 1'b0;
-				turn = 2'b01;
-				end
 			S_LOAD_P2_POS:  // Load player 2's square
-				begin
-				ld_p1 = 1'b0;
-				ld_p2 = 1'b0;
 				ld_pos = 1'b1;
-				turn = 2'b10;
-				end
-			S_LOAD_P2_POS_WAIT:
-				begin
-				ld_p1 = 1'b0;
-				ld_p2 = 1'b0;
-				ld_pos = 1'b1;
-				turn = 2'b10;
-				end
 			S_LOAD_P2: 	// Load player 2's move
-				begin
-				ld_p1 = 1'b0;
 				ld_p2 = 1'b1;
-				ld_pos = 1'b0;
-				turn = 2'b10;
-				end
-			S_LOAD_P2_WAIT:
-				begin
-				ld_p1 = 1'b0;
-				ld_p2 = 1'b1;
-				ld_pos = 1'b0;
-				turn = 2'b10;
-				end
 			S_CHECK_P1: 	// Tells check it's player 1's turn
-				begin
-				ld_p1 = 1'b0;
-				ld_p2 = 1'b0;
-				ld_pos = 1'b0;
 				turn = 2'b01;
-				end
 			S_CHECK_P2: 	// Tells check it's player 2's turn
-				begin
-				ld_p1 = 1'b0;
-				ld_p2 = 1'b0;
-				ld_pos = 1'b0;
 				turn = 2'b10;
-				end
-			endcase
+		endcase
 	end
 	
 	// Move to the next state on the next positive clock edge
