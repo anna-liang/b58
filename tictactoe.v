@@ -36,7 +36,9 @@ module tictactoe (
 
 	input 	[17:0]	SW;
 	input 	[3:0] 	KEY;
-
+	
+	
+	
 	// HEX outputs
 	output 	[6:0] 	HEX0;
 	output 	[6:0] 	HEX1;
@@ -47,11 +49,15 @@ module tictactoe (
 	output 	[6:0]	HEX6;
 	output 	[6:0]	HEX7;
 	
+	// LED outputs
+	output	[17:0] 	LEDR;
+	output	[8:0] 	LEDG;
+	
 	// Create wires for loads, write, draw, reset, and data
 	wire go;
 	assign go = SW[16];
 	wire writeEn;
-	wire reset_game;
+	reg reset_game;
 	wire reset_all;
 	assign reset_all = SW[17];
 	wire drawEn;
@@ -713,9 +719,9 @@ module move_hexdisplay(IN, OUT);
 	always@(*)
 	begin
 		case(IN[1:0])
-			2'b01 : 7'b0001001; // Outputs X => H
-			2'b10 : 7'b1000000; // Outputs O => 0
-			default : 7'b1111111;
+			2'b01 : OUT <= 7'b0001001; // Outputs X => H
+			2'b10 : OUT <= 7'b1000000; // Outputs O => 0
+			default : OUT <= 7'b1111111;
 		endcase
 	end
 endmodule
