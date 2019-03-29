@@ -94,7 +94,7 @@ module tictactoe (
         .letter_case(kb_letter_case)
     );
 	 
-	asciidecoder decoder(
+	ascii_decoder decoder(
 		.ASCII_VAL(ASCII_value),
 		.clock(CLOCK_50),
 		.move(move[1:0]),
@@ -218,7 +218,6 @@ module tictactoe (
 		.IN(drc_out[1:0]),
 		.OUT(HEX3[6:0])
 	);
-	
 	
 	// selected move
 	move_hexdisplay hex4(
@@ -408,7 +407,7 @@ module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, turn);
 				S_LOAD_P2: next_state = go ? S_LOAD_P2_WAIT : S_LOAD_P2; // Loop in current state until player 2 enters a value
 				S_LOAD_P2_WAIT: next_state = go ? S_LOAD_P2_WAIT : S_CHECK_P2; // Loop in current state until go signal goes low
 				S_CHECK_P2: next_state = check ? S_END_P2 : S_LOAD_P1_POS; // End the game or move to take player 1's inputs
-            default:     next_state = S_LOAD_P1_POS;
+            default:	next_state = S_LOAD_P1_POS;
         endcase
     end // state_table
 	
@@ -421,76 +420,76 @@ module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, turn);
 //		turn = 2'b00;
 		case (curr_state)
 			S_LOAD_P1_POS:	// Load player 1's square
-				begin
+			begin
 				ld_p1 = 1'b0;
 				ld_p2 = 1'b0;
 				ld_pos = 1'b1;
 				turn = 2'b01;
-				end
+			end
 			S_LOAD_P1_POS_WAIT:
-				begin
+			begin
 				ld_p1 = 1'b0;
 				ld_p2 = 1'b0;
 				ld_pos = 1'b1;
 				turn = 2'b01;
-				end
+			end
 			S_LOAD_P1: // Load player 1's move
-				begin
+			begin
 				ld_p1 = 1'b1;
 				ld_p2 = 1'b0;
 				ld_pos = 1'b0;
 				turn = 2'b01;
-				end
+			end
 			S_LOAD_P1_WAIT:
-				begin
+			begin
 				ld_p1 = 1'b1;
 				ld_p2 = 1'b0;
 				ld_pos = 1'b0;
 				turn = 2'b01;
-				end
+			end
 			S_LOAD_P2_POS:  // Load player 2's square
-				begin
+			begin
 				ld_p1 = 1'b0;
 				ld_p2 = 1'b0;
 				ld_pos = 1'b1;
 				turn = 2'b10;
-				end
+			end
 			S_LOAD_P2_POS_WAIT:
-				begin
+			begin
 				ld_p1 = 1'b0;
 				ld_p2 = 1'b0;
 				ld_pos = 1'b1;
 				turn = 2'b10;
-				end
+			end
 			S_LOAD_P2: 	// Load player 2's move
-				begin
+			begin
 				ld_p1 = 1'b0;
 				ld_p2 = 1'b1;
 				ld_pos = 1'b0;
 				turn = 2'b10;
-				end
+			end
 			S_LOAD_P2_WAIT:
-				begin
+			begin
 				ld_p1 = 1'b0;
 				ld_p2 = 1'b1;
 				ld_pos = 1'b0;
 				turn = 2'b10;
-				end
+			end
 			S_CHECK_P1: 	// Tells check it's player 1's turn
-				begin
+			begin
 				ld_p1 = 1'b0;
 				ld_p2 = 1'b0;
 				ld_pos = 1'b0;
 				turn = 2'b01;
-				end
+			end
 			S_CHECK_P2: 	// Tells check it's player 2's turn
-				begin
+			begin
 				ld_p1 = 1'b0;
 				ld_p2 = 1'b0;
 				ld_pos = 1'b0;
 				turn = 2'b10;
-				end
-			endcase
+			end
+		endcase
 	end
 	
 	// Move to the next state on the next positive clock edge
@@ -571,14 +570,11 @@ module check_end(s1, s2, s3, s4, s5, s6, s7, s8, s9, turn, check, winner);
 	end
 endmodule
 
-
-
-module asciidecoder(ASCII_VAL, clock, move, pos);
+module ascii_decoder(ASCII_VAL, clock, move, pos);
 	input ASCII_VAL;
 	input clock;
 	output reg [1:0] move;
 	output reg [3:0] pos;
-	
 	
 	always@(clock)
 	begin
@@ -669,7 +665,6 @@ module asciidecoder(ASCII_VAL, clock, move, pos);
 //	end
 endmodule
 
-
 module move_hexdisplay(IN, OUT);
 	input [1:0] IN;
 	output reg [6:0] OUT;
@@ -682,18 +677,16 @@ module move_hexdisplay(IN, OUT);
 			default : 7'b1111111;
 		endcase
 	end
-
-
 endmodule
 
 /* HEX Display module
 */
 module hex_display(IN, OUT);
     input [3:0] IN;
-	 output reg [6:0] OUT;
+	output reg [6:0] OUT;
 	 
-	 always @(*)
-	 begin
+	always @(*)
+	begin
 		case(IN[3:0])
 			4'b0000: OUT = 7'b1000000;
 			4'b0001: OUT = 7'b1111001;
@@ -711,9 +704,7 @@ module hex_display(IN, OUT);
 			4'b1101: OUT = 7'b0100001;
 			4'b1110: OUT = 7'b0000110;
 			4'b1111: OUT = 7'b0001110;
-			
 			default: OUT = 7'b0111111;
 		endcase
-
 	end
 endmodule
