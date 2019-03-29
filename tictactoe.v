@@ -13,12 +13,10 @@ choice of X or O from the keyboard, and displays the game on the hex displays of
 
 module tictactoe (
 		CLOCK_50,						//	On Board 50 MHz
-        SW,
-		KEY,
-		PS2_KBDAT,						//	PS2 Keyboard Data
-		PS2_KBCLK,						// 	PS2 Keyboard Clock
-		HEX0,
-		HEX1,		// Hex dispays
+		SW,								// Switches
+		KEY,								// Keys
+		HEX0,								// Hex dispays
+		HEX1,
 		HEX2,
 		HEX3,
 		HEX4,							
@@ -26,20 +24,20 @@ module tictactoe (
 		HEX6,
 		HEX7,
 		LEDR,
-		LEDG
+		LEDG,
+		PS2_KBDAT,						//	PS2 Keyboard Data
+		PS2_KBCLK						//	PS2 Keyboard Clock
 	);
 
 	
 	// Inputs
 	input CLOCK_50;							//	50 MHz
-	input PS2_KBDAT;
-	input PS2_KBCLK;
-
 	input 	[17:0]	SW;
 	input 	[3:0] 	KEY;
+	input PS2_KBDAT;
+	input PS2_KBCLK;
 	
-	
-	
+	// Outputs
 	// HEX outputs
 	output 	[6:0] 	HEX0;
 	output 	[6:0] 	HEX1;
@@ -106,11 +104,9 @@ module tictactoe (
 	reg [7:0] p2_score;
 
 	
-	// End of variables
-	
-	
-	
-	
+/////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
+
 	// Instansiate Keyboard module
     keyboard kd(
         .clk(CLOCK_50),
