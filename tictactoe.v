@@ -9,7 +9,6 @@ Whoever plays three X/O's in a row loses the game.
 
 This game involves taking the input of the position (1-9) of the move and the
 choice of X or O from the keyboard, and displays the game on the hex displays of the DE2 Board
-
 */
 
 module tictactoe (
@@ -33,8 +32,8 @@ module tictactoe (
 	input PS2_KBCLK;
 	wire [7:0] kb_scan_code;
 
-	input   [17:0]   SW;
-	input [3:0] KEY;
+	input 	[17:0]	SW;
+	input 	[3:0] 	KEY;
 
 	// HEX outputs
 	output 	[6:0] 	HEX0;
@@ -53,9 +52,9 @@ module tictactoe (
 	wire resetn;
 	assign resetn = SW[17];
 	wire drawEn;
-	wire [1:0] data_in;
-	// assign data_in = SW[1:0];
-	wire [1:0] data_result;
+	wire [1:0] move;
+	// assign move = SW[1:0];
+	wire [1:0] winner;
 	wire ld_p1;
 	wire ld_p2;
 	wire ld_pos;
@@ -76,8 +75,6 @@ module tictactoe (
 	reg [1:0] hex0pos, hex1pos, hex2pos;
 	reg hex_counter_enable;
 	wire [3:0] position;
-	
-
 
 	// Instansiate Keyboard module
     keyboard kd(
@@ -97,18 +94,12 @@ module tictactoe (
         .letter_case(kb_letter_case)
     );
 	 
-	
 	asciidecoder decoder(
 		.ASCII_VAL(ASCII_value),
 		.clock(CLOCK_50),
-		.move(data_in[1:0]),
+		.move(move[1:0]),
 		.pos(pos[3:0])
-		);
-
-	
-
-
-
+	);
 	
 	always @(posedge CLOCK_50)
 	begin
@@ -161,7 +152,7 @@ module tictactoe (
 	datapath d0(
 		.ld_p1(ld_p1),
 		.ld_p2(ld_p2),
-		 .data_in(data_in),
+		.move(move),
 	    .pos(pos),
 	    .ld_pos(ld_pos),
 	    .resetn(resetn),
@@ -175,7 +166,7 @@ module tictactoe (
 	    .s7(s7),
 	    .s8(s8),
 	    .s9(s9),
-		 .position(position)
+		.position(position)
 	);
 
     // Instansiate FSM control
@@ -187,7 +178,7 @@ module tictactoe (
 	   	.ld_p1(ld_p1),
 	   	.ld_p2(ld_p2),
 	   	.ld_pos(ld_pos),
-			.turn(turn[1:0])
+		.turn(turn[1:0])
 	);
 
 	// Instansiate checking
@@ -203,7 +194,7 @@ module tictactoe (
 	    .s9(s9),
 	    .turn(turn[1:0]),
 	    .check(check),
-	    .data_result(data_result)
+	    .winner(winner)
 	);
 
 	// DISPLAY KEYBOARD INPUT TO HEX4 AND HEX5
@@ -231,7 +222,7 @@ module tictactoe (
 	
 	// selected move
 	move_hexdisplay hex4(
-		.IN(data_in[1:0]),
+		.IN(move[1:0]),
 		.OUT(HEX4[6:0])
 	);
 	
@@ -277,7 +268,7 @@ module tictactoe (
 	
 	// winner
 	hex_display hex7(
-		.IN(data_result[1:0]),
+		.IN(winner[1:0]),
 		.OUT(HEX7[6:0])
 	);
 	
@@ -313,8 +304,8 @@ module display_row_counter(q, clock, clear_b, enable);
 	end
 endmodule
 
-module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, resetn, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9, position);
-	input [1:0] data_in; // Red Tile (10) or Blue Tile (01)
+module datapath(ld_p1, ld_p2, move, pos, ld_pos, resetn, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9, position);
+	input [1:0] move; // O (10) or X (01)
 	input [3:0] pos; // Cell (1-9 in binary)
 	input ld_p1, ld_p2, ld_pos, resetn, clock;
 
@@ -346,37 +337,36 @@ module datapath(ld_p1, ld_p2, data_in, pos, ld_pos, resetn, clock, s1, s2, s3, s
 		// Load data values
 		else
 		begin
-			// ****might not need player registers or position register***
 			// Loading player choices in player registers
 			if (ld_p1)
-				p1 <= data_in;
+				p1 <= move;
 			else if (ld_p2)
-				p2 <= data_in;
+				p2 <= move;
 			// Loading square position in position register
 			if (ld_pos)
 				position <= pos;
 			// If a player has been loaded
 			if (ld_p1 || ld_p2)
 			begin
-				// Move value into appropriate square register by storing data_in
+				// Move value into appropriate square register by storing move
 				if (position == 4'b0001)
-					s1 <= data_in;
+					s1 <= move;
 				else if (position == 4'b0010)
-					s2 <= data_in;
+					s2 <= move;
 				else if (position == 4'b0011)	
-					s3 <= data_in;
+					s3 <= move;
 				else if (position == 4'b0100)	
-					s4 <= data_in;
+					s4 <= move;
 				else if (position == 4'b0101)	
-					s5 <= data_in;
+					s5 <= move;
 				else if (position == 4'b0110)	
-					s6 <= data_in;
+					s6 <= move;
 				else if (position == 4'b0111)	
-					s7 <= data_in;
+					s7 <= move;
 				else if (position == 4'b1000)
-					s8 <= data_in;
+					s8 <= move;
 				else if (position == 4'b1001)	
-					s9 <= data_in;
+					s9 <= move;
 			end
 		end
 	end
@@ -516,10 +506,10 @@ endmodule
 /* Checks the end conditions of the game.
 Determines if there are three tiles in a row, if there is a tie, or if the game continues
 */
-module check_end(s1, s2, s3, s4, s5, s6, s7, s8, s9, turn, check, data_result);
+module check_end(s1, s2, s3, s4, s5, s6, s7, s8, s9, turn, check, winner);
 	input [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9, turn;
 	output reg check;
-	output reg [1:0] data_result;
+	output reg [1:0] winner;
 	
 	// Temp wires for end combinations
 	wire [1:0] t1, t2, t3, t4, t5, t6, t7, t8;
@@ -553,10 +543,10 @@ module check_end(s1, s2, s3, s4, s5, s6, s7, s8, s9, turn, check, data_result);
 			check <= 1'b1;
 			// If it was player 1's turn, they lose
 			if (turn == 2'b01)
-				data_result <= 2'b10;
+				winner <= 2'b10;
 			// If it was player 2's turn, they lose
 			else if (turn == 2'b10)
-				data_result <= 2'b01;
+				winner <= 2'b01;
 		end
 		// Otherwise, we have 00 for everything
 		// Either the game has not ended yet, or the game ended in a tie
@@ -568,14 +558,14 @@ module check_end(s1, s2, s3, s4, s5, s6, s7, s8, s9, turn, check, data_result);
 			begin
 				// Set everything to low
 				check <= 1'b0;
-				data_result <= 2'b00;
+				winner <= 2'b00;
 			end
 			// Otherwise, we have a tie
 			else
 			begin
 				// Set everything to high
 				check <= 1'b1;
-				data_result <= 2'b11;
+				winner <= 2'b11;
 			end
 		end
 	end
@@ -594,8 +584,8 @@ module asciidecoder(ASCII_VAL, clock, move, pos);
 	begin
 		// Data in is 10 or 01, default 00
 		case(ASCII_VAL)
-			8'h78 : move <= 2'b01; // Move type is x, data_in is 01
-			8'h6F : move <= 2'b10; // Move type is o, data_in is 10
+			8'h78 : move <= 2'b01; // Move type is x, move is 01
+			8'h6F : move <= 2'b10; // Move type is o, move is 10
 			default : move <= 2'b00; // Default to 0
 		endcase
 	end
