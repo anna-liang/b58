@@ -29,10 +29,11 @@ module tictactoe (
 		LEDG
 	);
 
+	
+	// Inputs
 	input CLOCK_50;							//	50 MHz
 	input PS2_KBDAT;
 	input PS2_KBCLK;
-	wire [7:0] kb_scan_code;
 
 	input 	[17:0]	SW;
 	input 	[3:0] 	KEY;
@@ -53,29 +54,44 @@ module tictactoe (
 	output	[17:0] 	LEDR;
 	output	[8:0] 	LEDG;
 	
-	// Create wires for loads, write, draw, reset, and data
+	
+	
+	
+	
+	// Create wires for go, pos, move, and reset_all
+	// Assign these to siwtches exept move and pos
 	wire go;
 	assign go = SW[16];
-	wire writeEn;
-	reg reset_game;
-	wire reset_all;
-	assign reset_all = SW[17];
-	wire drawEn;
+	wire [3:0] pos;
+	// assign pos = SW[7:4];
 	wire [1:0] move;
 	// assign move = SW[1:0];
+	wire reset_all;
+	assign reset_all = SW[17];
+	
+	
+	
+	// Create wires for loads, write, draw, reset, and data
+	wire writeEn;
+	wire drawEn;
 	wire [1:0] win_state;
 	wire ld_p1;
 	wire ld_p2;
 	wire ld_pos;
 	wire check;
 	wire [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9, turn;
-	wire [3:0] pos;
-	// assign pos = SW[7:4];
+
+	// Create reg for resetting the game
+	reg reset_game;
+
+
 
 	// Create wires for keyboard module
 	wire [7:0] ASCII_value;
+	wire [7:0] kb_scan_code;
 	wire kb_sc_ready;
 	wire kb_letter_case;
+	
 
 	// For cycling through hex displays
 	wire [2:0] drc_out;
@@ -89,6 +105,12 @@ module tictactoe (
 	reg [7:0] p1_score;
 	reg [7:0] p2_score;
 
+	
+	// End of variables
+	
+	
+	
+	
 	// Instansiate Keyboard module
     keyboard kd(
         .clk(CLOCK_50),
@@ -107,12 +129,15 @@ module tictactoe (
         .letter_case(kb_letter_case)
     );
 	 
+	 // Instantiate ascii decoder for our game
 	ascii_decoder decoder(
 		.ASCII_VAL(ASCII_value),
 		.clock(CLOCK_50),
 		.move(move[1:0]),
 		.pos(pos[3:0])
 	);
+	
+	
 	
 	always @(posedge CLOCK_50)
 	begin
@@ -244,8 +269,13 @@ module tictactoe (
 	    .win_state(win_state)
 	);
 
-	// DISPLAY KEYBOARD INPUT TO HEX4 AND HEX5
+	
+	
+	
+	
+	// Displaying to hex displays
 
+	// HEX2-HEX0 displays each row of the tictactoe grid
 	hex_display hex0(
 		.IN(hex2pos),
 		.OUT(HEX0[6:0])
@@ -261,18 +291,20 @@ module tictactoe (
 		.OUT(HEX2[6:0])
 	);
 	
+	// HEX3 displays the current row num
 	hex_display hex3(
 		.IN(drc_out[1:0]),
 		.OUT(HEX3[6:0])
 	);
 	
-	// selected move
+	// HEX4 displays the player's selected move
 	move_hexdisplay hex4(
 		.IN(move[1:0]),
 		.OUT(HEX4[6:0])
 	);
 	
 	/*
+	// Following displays the registers in cells 1-3
 	// move in square 1
 	hex_display hex0(
 		.IN(s3[1:0]),
@@ -292,13 +324,14 @@ module tictactoe (
 	);
 	*/
 	
-	// selected position
+	// HEX5 displays the player's selecte position (ie cell number to make move)
 	hex_display hex5(
 		.IN(pos[3:0]),
 		.OUT(HEX5[6:0])
 	);
 	
 	/*
+	// Following displays the position stored in the register
 	// position in register
 	hex_display hex5(
 		.IN(position[3:0]),
@@ -306,20 +339,22 @@ module tictactoe (
 	);
 	*/
 	
-	// turn
+	// HEX6 displays whose turn it is
 	hex_display hex6(
 		.IN(turn[1:0]),
 		.OUT(HEX6[6:0])
 	);
 	
-	// winner
+	// HEX7 displays the winner of the game (0-no winner, 1-P1 Wins, 2-P2 Wins, 3-Tie)
 	hex_display hex7(
 		.IN(win_state[1:0]),
 		.OUT(HEX7[6:0])
 	);
-	
 endmodule
 
+
+
+// Rate divider module
 module rate_divider(out, in, clock, clear_b);
 	input wire [27:0] in;
 	input clock;
@@ -350,6 +385,7 @@ module display_row_counter(out, clock, clear_b, enable);
 	end
 endmodule
 
+// Data path module
 module datapath(ld_p1, ld_p2, move, pos, ld_pos, reset_game, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9, position);
 	input [1:0] move; // O (10) or X (01)
 	input [3:0] pos; // Cell (1-9 in binary)
@@ -418,6 +454,7 @@ module datapath(ld_p1, ld_p2, move, pos, ld_pos, reset_game, clock, s1, s2, s3, 
 	end
 endmodule
 
+// Control module
 module control(go, reset_game, clock, check, ld_p1, ld_p2, ld_pos, turn);
 	// Declare inputs, outputs, wires, and regs
 	input go, reset_game, clock, check;
@@ -617,6 +654,8 @@ module check_end(s1, s2, s3, s4, s5, s6, s7, s8, s9, turn, check, win_state);
 	end
 endmodule
 
+
+// Ascii decoder module
 module ascii_decoder(ASCII_VAL, clock, move, pos);
 	input ASCII_VAL;
 	input clock;
@@ -712,6 +751,7 @@ module ascii_decoder(ASCII_VAL, clock, move, pos);
 //	end
 endmodule
 
+// Hex decoder module for outputting X or O to a hex display
 module move_hexdisplay(IN, OUT);
 	input [1:0] IN;
 	output reg [6:0] OUT;
@@ -726,8 +766,8 @@ module move_hexdisplay(IN, OUT);
 	end
 endmodule
 
-/* HEX Display module
-*/
+
+// Hex display module
 module hex_display(IN, OUT);
     input [3:0] IN;
 	output reg [6:0] OUT;
