@@ -13,31 +13,28 @@ choice of X or O from the keyboard, and displays the game on the hex displays of
 
 module tictactoe (
 		CLOCK_50,						//	On Board 50 MHz
-		SW,								// Switches
-		KEY,								// Keys
-		HEX0,								// Hex dispays
-		HEX1,
+        SW,
+		KEY,
+		PS2_KBDAT,						//	PS2 Keyboard Data
+		PS2_KBCLK,						// 	PS2 Keyboard Clock
+		HEX0,
+		HEX1,		// Hex dispays
 		HEX2,
 		HEX3,
 		HEX4,							
 		HEX5,
 		HEX6,
-		HEX7,
-		LEDR,
-		LEDG,
-		PS2_KBDAT,						//	PS2 Keyboard Data
-		PS2_KBCLK						//	PS2 Keyboard Clock
+		HEX7
 	);
 
-	
-	// Inputs
 	input CLOCK_50;							//	50 MHz
-	input 	[17:0]	SW;
-	input 	[3:0] 	KEY;
 	input PS2_KBDAT;
 	input PS2_KBCLK;
-	
-	// Outputs
+	wire [7:0] kb_scan_code;
+
+	input 	[17:0]	SW;
+	input 	[3:0] 	KEY;
+
 	// HEX outputs
 	output 	[6:0] 	HEX0;
 	output 	[6:0] 	HEX1;
@@ -48,48 +45,28 @@ module tictactoe (
 	output 	[6:0]	HEX6;
 	output 	[6:0]	HEX7;
 	
-	// LED outputs
-	output	[17:0] 	LEDR;
-	output	[8:0] 	LEDG;
-	
-	
-	
-	
-	
-	// Create wires for go, pos, move, and reset_all
-	// Assign these to siwtches exept move and pos
+	// Create wires for loads, write, draw, reset, and data
 	wire go;
 	assign go = SW[16];
-	wire [3:0] pos;
-	// assign pos = SW[7:4];
-	wire [1:0] move;
-	// assign move = SW[1:0];
-	wire reset_all;
-	assign reset_all = SW[17];
-	
-	
-	
-	// Create wires for loads, write, draw, reset, and data
 	wire writeEn;
+	wire resetn;
+	assign resetn = SW[17];
 	wire drawEn;
-	wire [1:0] win_state;
+	wire [1:0] move;
+	assign move = SW[1:0];
+	wire [1:0] winner;
 	wire ld_p1;
 	wire ld_p2;
 	wire ld_pos;
 	wire check;
 	wire [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9, turn;
-
-	// Create reg for resetting the game
-	reg reset_game;
-
-
+	wire [3:0] pos;
+	assign pos = SW[7:4];
 
 	// Create wires for keyboard module
 	wire [7:0] ASCII_value;
-	wire [7:0] kb_scan_code;
 	wire kb_sc_ready;
 	wire kb_letter_case;
-	
 
 	// For cycling through hex displays
 	wire [2:0] drc_out;
@@ -99,41 +76,30 @@ module tictactoe (
 	reg hex_counter_enable;
 	wire [3:0] position;
 
-	// For scores for both players
-	reg [7:0] p1_score;
-	reg [7:0] p2_score;
-
-	
-/////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////
-
-	// Instansiate Keyboard module
-    keyboard kd(
-        .clk(CLOCK_50),
-        .reset(reset_game),
-        .ps2d(PS2_KBDAT),
-        .ps2c(PS2_KBCLK),
-        .scan_code(kb_scan_code),
-        .scan_code_ready(kb_sc_ready),
-        .letter_case_out(kb_letter_case)
-    );
-
-    // Instansiate ascii converter
-    keytoascii ascii(
-        .ascii_code(ASCII_value),
-        .scan_code(kb_scan_code),
-        .letter_case(kb_letter_case)
-    );
-	 
-	 // Instantiate ascii decoder for our game
-	ascii_decoder decoder(
-		.ASCII_VAL(ASCII_value),
-		.clock(CLOCK_50),
-		.move(move[1:0]),
-		.pos(pos[3:0])
-	);
-	
-	
+//	// Instansiate Keyboard module
+//    keyboard kd(
+//        .clk(CLOCK_50),
+//        .reset(~resetn),
+//        .ps2d(PS2_KBDAT),
+//        .ps2c(PS2_KBCLK),
+//        .scan_code(kb_scan_code),
+//        .scan_code_ready(kb_sc_ready),
+//        .letter_case_out(kb_letter_case)
+//    );
+//
+//    // Instansiate ascii converter
+//    keytoascii ascii(
+//        .ascii_code(ASCII_value),
+//        .scan_code(kb_scan_code),
+//        .letter_case(kb_letter_case)
+//    );
+//	 
+//	ascii_decoder decoder(
+//		.ASCII_VAL(ASCII_value),
+//		.clock(CLOCK_50),
+//		.move(move[1:0]),
+//		.pos(pos[3:0])
+//	);
 	
 	always @(posedge CLOCK_50)
 	begin
@@ -167,57 +133,18 @@ module tictactoe (
 		end
 	end
 
-	// Add scores when theres a winner
-	always @(posedge CLOCK_50)
-	begin
-		if(reset_all == 1'b0)
-		begin
-			p1_score <= 8'b0;
-			p2_score <= 8'b0;
-		end
-		else if(win_state == 2'b01)
-			p1_score <= p1_score + 1'b1;
-		else if(win_state == 2'b10)
-			p2_score <= p2_score + 1'b1;
-	end
-
-	// Assign scores to leds
-	assign LEDR[7:0] = p1_score[7:0];
-	assign LEDG[7:0] = p2_score[7:0];
-
-	// Reset game on win/tie
-	always @(posedge CLOCK_50)
-	begin
-		if(win_state == 2'b01 || win_state == 2'b10 || win_state == 2'b11)
-			reset_game = 1'b0;
-		else
-			reset_game = 1'b1;
-	end
-
-//	// Reset scores/game on input
-//	always @(posedge CLOCK_50)
-//	begin
-//		if(reset_all == 1'b0)
-//		begin
-//			p1_score = 8'b0;
-//			p2_score = 8'b0;
-//		end
-//	end
-
 	// RATE DIVIDER AND DISPLAY COUNTER
 	rate_divider rd(
-		.out(rd_out[27:0]),
-		.in(rd_in[27:0]),
+		.q(rd_out[27:0]),
+		.d(rd_in[27:0]),
 		.clock(CLOCK_50),
-		.reset_game(reset_game),
-		.reset_all(reset_all)
+		.clear_b(resetn),
 	);
 
 	display_row_counter drc(
-		.out(drc_out[2:0]),
+		.q(drc_out[2:0]),
 		.clock(CLOCK_50),
-		.reset_game(reset_game),
-		.reset_all(reset_all),
+		.clear_b(resetn),
 		.enable(hex_counter_enable)
 	);
 
@@ -228,8 +155,7 @@ module tictactoe (
 		.move(move),
 	    .pos(pos),
 	    .ld_pos(ld_pos),
-	    .reset_game(reset_game),
-		 .reset_all(reset_all),
+	    .resetn(resetn),
 	    .clock(CLOCK_50),
 	    .s1(s1),
 	    .s2(s2),
@@ -246,8 +172,7 @@ module tictactoe (
     // Instansiate FSM control
 	control c0(
 		.go(go),
-	   	.reset_game(reset_game),
-			.reset_all(reset_all),
+	   	.resetn(resetn),
 	   	.clock(CLOCK_50),
 	   	.check(check),
 	   	.ld_p1(ld_p1),
@@ -269,45 +194,38 @@ module tictactoe (
 	    .s9(s9),
 	    .turn(turn[1:0]),
 	    .check(check),
-	    .win_state(win_state)
+	    .winner(winner)
 	);
 
-	
-	
-	
-	
-	// Displaying to hex displays
+	// DISPLAY KEYBOARD INPUT TO HEX4 AND HEX5
 
-	// HEX2-HEX0 displays each row of the tictactoe grid
-	hex_display hex0(
+	move_hexdisplay hex0(
 		.IN(hex2pos),
 		.OUT(HEX0[6:0])
 	);
 	
-	hex_display hex1(
+	move_hexdisplay hex1(
 		.IN(hex1pos),
 		.OUT(HEX1[6:0])
 	);
 
-	hex_display hex2(
+	move_hexdisplay hex2(
 		.IN(hex0pos),
 		.OUT(HEX2[6:0])
 	);
 	
-	// HEX3 displays the current row num
 	hex_display hex3(
 		.IN(drc_out[1:0]),
 		.OUT(HEX3[6:0])
 	);
 	
-	// HEX4 displays the player's selected move
+	// selected move
 	move_hexdisplay hex4(
 		.IN(move[1:0]),
 		.OUT(HEX4[6:0])
 	);
 	
 	/*
-	// Following displays the registers in cells 1-3
 	// move in square 1
 	hex_display hex0(
 		.IN(s3[1:0]),
@@ -327,14 +245,13 @@ module tictactoe (
 	);
 	*/
 	
-	// HEX5 displays the player's selecte position (ie cell number to make move)
+	// selected position
 	hex_display hex5(
 		.IN(pos[3:0]),
 		.OUT(HEX5[6:0])
 	);
 	
 	/*
-	// Following displays the position stored in the register
 	// position in register
 	hex_display hex5(
 		.IN(position[3:0]),
@@ -342,57 +259,54 @@ module tictactoe (
 	);
 	*/
 	
-	// HEX6 displays whose turn it is
+	// turn
 	hex_display hex6(
 		.IN(turn[1:0]),
 		.OUT(HEX6[6:0])
 	);
 	
-	// HEX7 displays the winner of the game (0-no winner, 1-P1 Wins, 2-P2 Wins, 3-Tie)
+	// winner
 	hex_display hex7(
-		.IN(win_state[1:0]),
+		.IN(winner[1:0]),
 		.OUT(HEX7[6:0])
 	);
+	
 endmodule
 
-
-
-// Rate divider module
-module rate_divider(out, in, clock, reset_game, reset_all);
-	input wire [27:0] in;
+module rate_divider(q, d, clock, clear_b);
+	input wire [27:0] d;
 	input clock;
-	input reset_game, reset_all;
-	output reg [27:0] out;
+	input clear_b;
+	output reg [27:0] q;
 
 	always @(posedge clock)
 	begin
-		if(!reset_game || !reset_all || out == 28'b0)
-			out <= in;
+		if(clear_b == 1'b0 || q == 28'b0)
+			q <= d;
 		else
-			out <= out - 1'b1;
+			q <= q - 1'b1;
 	end
 endmodule
 
-module display_row_counter(out, clock, reset_game, reset_all, enable);
+module display_row_counter(q, clock, clear_b, enable);
 	input clock;
-	input reset_game, reset_all;
+	input clear_b;
 	input enable;
-	output reg [2:0] out;
+	output reg [2:0] q;
 
 	always @(posedge clock)
 	begin
-		if(!reset_game || !reset_all || out == 3'b100)
-			out <= 1'b1;
+		if(clear_b == 1'b0 || q == 3'b100)
+			q <= 1'b1;
 		else if(enable == 1'b1)
-			out <= out + 1'b1;
+			q <= q + 1'b1;
 	end
 endmodule
 
-// Data path module
-module datapath(ld_p1, ld_p2, move, pos, ld_pos, reset_game, reset_all, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9, position);
+module datapath(ld_p1, ld_p2, move, pos, ld_pos, resetn, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9, position);
 	input [1:0] move; // O (10) or X (01)
 	input [3:0] pos; // Cell (1-9 in binary)
-	input ld_p1, ld_p2, ld_pos, reset_game, reset_all, clock;
+	input ld_p1, ld_p2, ld_pos, resetn, clock;
 
 	// Registers for each square of the grid
 	output reg [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9;
@@ -404,7 +318,7 @@ module datapath(ld_p1, ld_p2, move, pos, ld_pos, reset_game, reset_all, clock, s
 	always @(posedge clock)
 	begin
 		// Reset all registers
-		if (!reset_game || !reset_all)
+		if (!resetn)
 		begin
 			p1 <= 2'b0;
 			p2 <= 2'b0;
@@ -457,10 +371,9 @@ module datapath(ld_p1, ld_p2, move, pos, ld_pos, reset_game, reset_all, clock, s
 	end
 endmodule
 
-// Control module
-module control(go, reset_game, reset_all, clock, check, ld_p1, ld_p2, ld_pos, turn);
+module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, turn);
 	// Declare inputs, outputs, wires, and regs
-	input go, reset_game, reset_all, clock, check;
+	input go, resetn, clock, check;
 	output reg ld_p1, ld_p2, ld_pos;
 	output reg [1:0] turn;
 	
@@ -582,7 +495,7 @@ module control(go, reset_game, reset_all, clock, check, ld_p1, ld_p2, ld_pos, tu
 	// Move to the next state on the next positive clock edge
 	always@(posedge clock)
 	begin: state_FFs
-        if(!reset_game || !reset_all)
+        if(!resetn)
             curr_state <= S_LOAD_P1_POS;	// Move back to loading player 1's square if reset
         else
             curr_state <= next_state; 	// Otherwise, move to the next state
@@ -592,10 +505,10 @@ endmodule
 /* Checks the end conditions of the game.
 Determines if there are three tiles in a row, if there is a tie, or if the game continues
 */
-module check_end(s1, s2, s3, s4, s5, s6, s7, s8, s9, turn, check, win_state);
+module check_end(s1, s2, s3, s4, s5, s6, s7, s8, s9, turn, check, winner);
 	input [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9, turn;
 	output reg check;
-	output reg [1:0] win_state;
+	output reg [1:0] winner;
 	
 	// Temp wires for end combinations
 	wire [1:0] t1, t2, t3, t4, t5, t6, t7, t8;
@@ -629,10 +542,10 @@ module check_end(s1, s2, s3, s4, s5, s6, s7, s8, s9, turn, check, win_state);
 			check <= 1'b1;
 			// If it was player 1's turn, they lose
 			if (turn == 2'b01)
-				win_state <= 2'b10;
+				winner <= 2'b10;
 			// If it was player 2's turn, they lose
 			else if (turn == 2'b10)
-				win_state <= 2'b01;
+				winner <= 2'b01;
 		end
 		// Otherwise, we have 00 for everything
 		// Either the game has not ended yet, or the game ended in a tie
@@ -644,55 +557,53 @@ module check_end(s1, s2, s3, s4, s5, s6, s7, s8, s9, turn, check, win_state);
 			begin
 				// Set everything to low
 				check <= 1'b0;
-				win_state <= 2'b00;
+				winner <= 2'b00;
 			end
 			// Otherwise, we have a tie
 			else
 			begin
 				// Set everything to high
 				check <= 1'b1;
-				win_state <= 2'b11;
+				winner <= 2'b11;
 			end
 		end
 	end
 endmodule
 
-
-// Ascii decoder module
-module ascii_decoder(ASCII_VAL, clock, move, pos);
-	input ASCII_VAL;
-	input clock;
-	output reg [1:0] move;
-	output reg [3:0] pos;
-	
-	always@(clock)
-	begin
-		// Data in is 10 or 01, default 00
-		case(ASCII_VAL)
-			8'h78 : move <= 2'b01; // Move type is x, move is 01
-			8'h6F : move <= 2'b10; // Move type is o, move is 10
-			default : move <= 2'b00; // Default to 0
-		endcase
-	end
-	
-	always@(clock)
-	begin
-		// Pos is 4 bit 1-9, default 0
-		case (ASCII_VAL)
-			8'h31 : pos <= 4'b0001; // Cell number 1, pos is 1 in binary
-			8'h32 : pos <= 4'b0010; // Cell number 2, pos is 2 in binary
-			8'h33 : pos <= 4'b0011; // Cell number 3, pos is 3 in binary
-			8'h34 : pos <= 4'b0100; // Cell number 4, pos is 4 in binary
-			8'h35 : pos <= 4'b0101; // Cell number 5, pos is 5 in binary
-			8'h36 : pos <= 4'b0110; // Cell number 6, pos is 6 in binary
-			8'h37 : pos <= 4'b0111; // Cell number 7, pos is 7 in binary
-			8'h38 : pos <= 4'b1000; // Cell number 8, pos is 8 in binary
-			8'h39 : pos <= 4'b1001; // Cell number 9, pos is 9 in binary
-			default : pos <= 4'b0000; // Default to 0
-		endcase
-	end
-
-
+//module ascii_decoder(ASCII_VAL, clock, move, pos);
+//	input ASCII_VAL;
+//	input clock;
+//	output reg [1:0] move;
+//	output reg [3:0] pos;
+//	
+////	always@(clock)
+////	begin
+////		// Data in is 10 or 01, default 00
+////		case(ASCII_VAL)
+////			8'h78 : move <= 2'b01; // Move type is x, move is 01
+////			8'h6F : move <= 2'b10; // Move type is o, move is 10
+////			default : move <= 2'b00; // Default to 0
+////		endcase
+////	end
+////	
+////	always@(clock)
+////	begin
+////		// Pos is 4 bit 1-9, default 0
+////		case (ASCII_VAL)
+////			8'h31 : pos <= 4'b0001; // Cell number 1, pos is 1 in binary
+////			8'h32 : pos <= 4'b0010; // Cell number 2, pos is 2 in binary
+////			8'h33 : pos <= 4'b0011; // Cell number 3, pos is 3 in binary
+////			8'h34 : pos <= 4'b0100; // Cell number 4, pos is 4 in binary
+////			8'h35 : pos <= 4'b0101; // Cell number 5, pos is 5 in binary
+////			8'h36 : pos <= 4'b0110; // Cell number 6, pos is 6 in binary
+////			8'h37 : pos <= 4'b0111; // Cell number 7, pos is 7 in binary
+////			8'h38 : pos <= 4'b1000; // Cell number 8, pos is 8 in binary
+////			8'h39 : pos <= 4'b1001; // Cell number 9, pos is 9 in binary
+////			default : pos <= 4'b0000; // Default to 0
+////		endcase
+////	end
+//
+//
 //	// Same as above but using if statements
 //	always@(clock)
 //	begin
@@ -752,7 +663,7 @@ module ascii_decoder(ASCII_VAL, clock, move, pos);
 //			pos <= 4'b1001;
 //			end
 //	end
-endmodule
+//endmodule
 
 // Hex decoder module for outputting X or O to a hex display
 module move_hexdisplay(IN, OUT);
@@ -764,13 +675,13 @@ module move_hexdisplay(IN, OUT);
 		case(IN[1:0])
 			2'b01 : OUT <= 7'b0001001; // Outputs X => H
 			2'b10 : OUT <= 7'b1000000; // Outputs O => 0
-			default : OUT <= 7'b1111111;
+			default : OUT <= 7'b0111111;
 		endcase
 	end
 endmodule
 
-
-// Hex display module
+/* HEX Display module
+*/
 module hex_display(IN, OUT);
     input [3:0] IN;
 	output reg [6:0] OUT;
