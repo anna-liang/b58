@@ -1,17 +1,16 @@
-/* Wild Misere Red Tile Blue
+/* Wild Misere Tic Tac Toe
 
 Wild Misere Red Tile Blue is a variation of the classic Tic Tac Toe game.
 The "Wild" factor involves allowing a player to choose if they wish to
-play a 'Red Tile' or 'Blue Tile' on each turn.
+play an X or O on each turn.
 The "Misere" factor puts a twist on the ending condition of the game.
-The goal is to avoid playing three Red Tiles or three Blue Tiles in a row.
-Whoever plays three tiles in a row loses the game.
+The goal is to avoid playing three X's or three O's in a row.
+Whoever plays three X/O's in a row loses the game.
 
 This game involves taking the input of the position (1-9) of the move and the
-choice of 'Red Tile' or 'Blue Tile' from the keyboard, and displays the game on a
-VGA monitor.
-
+choice of X or O from the keyboard, and displays the game on the hex displays of the DE2 Board
 */
+
 module tictactoe (
 		CLOCK_50,						//	On Board 50 MHz
         SW,
@@ -54,7 +53,7 @@ module tictactoe (
 	assign resetn = SW[17];
 	wire drawEn;
 	wire [1:0] data_in;
-	assign data_in = SW[1:0];
+	// assign data_in = SW[1:0];
 	wire [1:0] data_result;
 	wire ld_p1;
 	wire ld_p2;
@@ -62,8 +61,12 @@ module tictactoe (
 	wire check;
 	wire [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9, turn;
 	wire [3:0] pos;
-	assign pos = SW[7:4];
+	// assign pos = SW[7:4];
 
+	// Create wires for keyboard module
+	wire [7:0] ASCII_value;
+	wire kb_sc_ready;
+	wire kb_letter_case;
 
 	// For cycling through hex displays
 	wire [2:0] drc_out;
@@ -74,7 +77,37 @@ module tictactoe (
 	wire [3:0] position;
 	
 
+
+	// Instansiate Keyboard module
+    keyboard kd(
+        .clk(CLOCK_50),
+        .reset(resetn),
+        .ps2d(PS2_KBDAT),
+        .ps2c(PS2_KBCLK),
+        .scan_code(kb_scan_code),
+        .scan_code_ready(kb_sc_ready),
+        .letter_case_out(kb_letter_case)
+    );
+
+    // Instansiate ascii converter
+    keytoascii ascii(
+        .ascii_code(ASCII_value),
+        .scan_code(kb_scan_code),
+        .letter_case(kb_letter_case)
+    );
+	 
 	
+	asciidecoder decoder(
+		.ASCII_VAL(ASCII_value),
+		.clock(CLOCK_50),
+		.move(data_in[1:0]),
+		.pos(pos[3:0])
+		);
+
+	
+
+
+
 	
 	always @(posedge CLOCK_50)
 	begin
@@ -196,7 +229,7 @@ module tictactoe (
 	
 	
 	// selected move
-	hex_display hex4(
+	move_hexdisplay hex4(
 		.IN(data_in[1:0]),
 		.OUT(HEX4[6:0])
 	);
@@ -240,6 +273,7 @@ module tictactoe (
 		.IN(turn[1:0]),
 		.OUT(HEX6[6:0])
 	);
+	
 	// winner
 	hex_display hex7(
 		.IN(data_result[1:0]),
@@ -546,6 +580,119 @@ module check_end(s1, s2, s3, s4, s5, s6, s7, s8, s9, turn, check, data_result);
 	end
 endmodule
 
+
+
+module asciidecoder(ASCII_VAL, clock, move, pos);
+	input ASCII_VAL;
+	input clock;
+	output reg [1:0] move;
+	output reg [3:0] pos;
+
+
+//	always@(clock)
+//	begin
+//		if(ASCII_VAL == 8'h62)
+//			begin
+//			move <= 2'b01;
+//			pos <= 4'b0000;
+//			end
+//		else if(ASCII_VAL == 8'h72)
+//			begin
+//			move <= 2'b10;
+//			pos <= 4'b0000;
+//			end
+//		else if(ASCII_VAL == 8'h31)
+//			begin
+//			move <= 2'b00;
+//			pos <= 4'b0001;
+//			end
+//		else if(ASCII_VAL == 8'h32)
+//			begin
+//			move <= 2'b00;
+//			pos <= 4'b0010;
+//			end
+//		else if(ASCII_VAL == 8'h33)
+//			begin
+//			move <= 2'b00;
+//			pos <= 4'b0011;
+//			end
+//		else if(ASCII_VAL == 8'h34)
+//			begin
+//			move <= 2'b00;
+//			pos <= 4'b0100;
+//			end
+//		else if(ASCII_VAL == 8'h35)
+//			begin
+//			move <= 2'b00;
+//			pos <= 4'b0101;
+//			end
+//		else if(ASCII_VAL == 8'h36)
+//			begin
+//			move <= 2'b00;
+//			pos <= 4'b0110;
+//			end
+//		else if(ASCII_VAL == 8'h37)
+//			begin
+//			move <= 2'b00;
+//			pos <= 4'b0111;
+//			end
+//		else if(ASCII_VAL == 8'h38)
+//			begin
+//			move <= 2'b00;
+//			pos <= 4'b1000;
+//			end
+//		else if(ASCII_VAL == 8'h39)
+//			begin
+//			move <= 2'b00;
+//			pos <= 4'b1001;
+//			end
+//	end
+	
+	
+	always@(clock)
+	begin
+		// Data in is 10 or 01, default 00
+		case(ASCII_VAL)
+			8'h78 : move <= 2'b01; // Move type is x, data_in is 01
+			8'h6F : move <= 2'b10; // Move type is o, data_in is 10
+			default : move <= 2'b00; // Default to 0
+		endcase
+	end
+	
+	always@(clock)
+	begin
+		// Pos is 4 bit 1-9, default 0
+		case (ASCII_VAL)
+			8'h31 : pos <= 4'b0001; // Cell number 1, pos is 1 in binary
+			8'h32 : pos <= 4'b0010; // Cell number 2, pos is 2 in binary
+			8'h33 : pos <= 4'b0011; // Cell number 3, pos is 3 in binary
+			8'h34 : pos <= 4'b0100; // Cell number 4, pos is 4 in binary
+			8'h35 : pos <= 4'b0101; // Cell number 5, pos is 5 in binary
+			8'h36 : pos <= 4'b0110; // Cell number 6, pos is 6 in binary
+			8'h37 : pos <= 4'b0111; // Cell number 7, pos is 7 in binary
+			8'h38 : pos <= 4'b1000; // Cell number 8, pos is 8 in binary
+			8'h39 : pos <= 4'b1001; // Cell number 9, pos is 9 in binary
+			default : pos <= 4'b0000; // Default to 0
+		endcase
+	end
+endmodule
+
+
+module move_hexdisplay(IN, OUT);
+	input [1:0] IN;
+	output reg [6:0] OUT;
+
+	always@(*)
+	begin
+		case(IN[1:0])
+			2'b01 : 7'b0001001; // Outputs X => H
+			2'b10 : 7'b1000000; // Outputs O => 0
+			default : 7'b1111111;
+		endcase
+	end
+
+
+endmodule
 
 /* HEX Display module
 */
