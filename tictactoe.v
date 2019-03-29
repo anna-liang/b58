@@ -9,6 +9,7 @@ Whoever plays three X/O's in a row loses the game.
 
 This game involves taking the input of the position (1-9) of the move and the
 choice of X or O from the keyboard, and displays the game on the hex displays of the DE2 Board
+
 */
 
 module tictactoe (
