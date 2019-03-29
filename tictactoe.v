@@ -170,10 +170,15 @@ module tictactoe (
 	// Add scores when theres a winner
 	always @(posedge CLOCK_50)
 	begin
-		if(win_state == 2'b01)
-			p1_score <= p1_score + 1;
+		if(reset_all == 1'b0)
+		begin
+			p1_score <= 8'b0;
+			p2_score <= 8'b0;
+		end
+		else if(win_state == 2'b01)
+			p1_score <= p1_score + 1'b1;
 		else if(win_state == 2'b10)
-			p2_score <= p2_score + 1;
+			p2_score <= p2_score + 1'b1;
 	end
 
 	// Assign scores to leds
@@ -184,35 +189,35 @@ module tictactoe (
 	always @(posedge CLOCK_50)
 	begin
 		if(win_state == 2'b01 || win_state == 2'b10 || win_state == 2'b11)
-			reset_game = 0;
+			reset_game = 1'b0;
 		else
-			reset_game = 1;
+			reset_game = 1'b1;
 	end
 
-	// Reset scores/game on input
-	always @(posedge CLOCK_50)
-	begin
-		if(reset_all == 1'b0)
-		begin
-			p1_score <= 0;
-			p2_score <= 0;
-			reset_all = 1;
-			reset_game = 1;
-		end
-	end
+//	// Reset scores/game on input
+//	always @(posedge CLOCK_50)
+//	begin
+//		if(reset_all == 1'b0)
+//		begin
+//			p1_score = 8'b0;
+//			p2_score = 8'b0;
+//		end
+//	end
 
 	// RATE DIVIDER AND DISPLAY COUNTER
 	rate_divider rd(
 		.out(rd_out[27:0]),
 		.in(rd_in[27:0]),
 		.clock(CLOCK_50),
-		.clear_b(reset_game),
+		.reset_game(reset_game),
+		.reset_all(reset_all)
 	);
 
 	display_row_counter drc(
 		.out(drc_out[2:0]),
 		.clock(CLOCK_50),
-		.clear_b(reset_game),
+		.reset_game(reset_game),
+		.reset_all(reset_all),
 		.enable(hex_counter_enable)
 	);
 
@@ -224,6 +229,7 @@ module tictactoe (
 	    .pos(pos),
 	    .ld_pos(ld_pos),
 	    .reset_game(reset_game),
+		 .reset_all(reset_all),
 	    .clock(CLOCK_50),
 	    .s1(s1),
 	    .s2(s2),
@@ -241,6 +247,7 @@ module tictactoe (
 	control c0(
 		.go(go),
 	   	.reset_game(reset_game),
+			.reset_all(reset_all),
 	   	.clock(CLOCK_50),
 	   	.check(check),
 	   	.ld_p1(ld_p1),
@@ -351,30 +358,30 @@ endmodule
 
 
 // Rate divider module
-module rate_divider(out, in, clock, clear_b);
+module rate_divider(out, in, clock, reset_game, reset_all);
 	input wire [27:0] in;
 	input clock;
-	input clear_b;
+	input reset_game, reset_all;
 	output reg [27:0] out;
 
 	always @(posedge clock)
 	begin
-		if(clear_b == 1'b0 || out == 28'b0)
+		if(!reset_game || !reset_all || out == 28'b0)
 			out <= in;
 		else
 			out <= out - 1'b1;
 	end
 endmodule
 
-module display_row_counter(out, clock, clear_b, enable);
+module display_row_counter(out, clock, reset_game, reset_all, enable);
 	input clock;
-	input clear_b;
+	input reset_game, reset_all;
 	input enable;
 	output reg [2:0] out;
 
 	always @(posedge clock)
 	begin
-		if(clear_b == 1'b0 || out == 3'b100)
+		if(!reset_game || !reset_all || out == 3'b100)
 			out <= 1'b1;
 		else if(enable == 1'b1)
 			out <= out + 1'b1;
@@ -382,10 +389,10 @@ module display_row_counter(out, clock, clear_b, enable);
 endmodule
 
 // Data path module
-module datapath(ld_p1, ld_p2, move, pos, ld_pos, reset_game, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9, position);
+module datapath(ld_p1, ld_p2, move, pos, ld_pos, reset_game, reset_all, clock, s1, s2, s3, s4, s5, s6, s7, s8, s9, position);
 	input [1:0] move; // O (10) or X (01)
 	input [3:0] pos; // Cell (1-9 in binary)
-	input ld_p1, ld_p2, ld_pos, reset_game, clock;
+	input ld_p1, ld_p2, ld_pos, reset_game, reset_all, clock;
 
 	// Registers for each square of the grid
 	output reg [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9;
@@ -397,7 +404,7 @@ module datapath(ld_p1, ld_p2, move, pos, ld_pos, reset_game, clock, s1, s2, s3, 
 	always @(posedge clock)
 	begin
 		// Reset all registers
-		if (!reset_game)
+		if (!reset_game || !reset_all)
 		begin
 			p1 <= 2'b0;
 			p2 <= 2'b0;
@@ -451,9 +458,9 @@ module datapath(ld_p1, ld_p2, move, pos, ld_pos, reset_game, clock, s1, s2, s3, 
 endmodule
 
 // Control module
-module control(go, reset_game, clock, check, ld_p1, ld_p2, ld_pos, turn);
+module control(go, reset_game, reset_all, clock, check, ld_p1, ld_p2, ld_pos, turn);
 	// Declare inputs, outputs, wires, and regs
-	input go, reset_game, clock, check;
+	input go, reset_game, reset_all, clock, check;
 	output reg ld_p1, ld_p2, ld_pos;
 	output reg [1:0] turn;
 	
@@ -575,7 +582,7 @@ module control(go, reset_game, clock, check, ld_p1, ld_p2, ld_pos, turn);
 	// Move to the next state on the next positive clock edge
 	always@(posedge clock)
 	begin: state_FFs
-        if(!reset_game)
+        if(!reset_game || !reset_all)
             curr_state <= S_LOAD_P1_POS;	// Move back to loading player 1's square if reset
         else
             curr_state <= next_state; 	// Otherwise, move to the next state
