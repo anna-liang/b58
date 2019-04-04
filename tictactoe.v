@@ -47,7 +47,7 @@ module tictactoe (
 	
 	// Create wires for loads, write, draw, reset, and data
 	wire go;
-	assign go = SW[16];
+	assign go = SW[0];
 	wire writeEn;
 	wire resetn;
 	assign resetn = SW[17];
