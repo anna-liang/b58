@@ -47,7 +47,7 @@ module tictactoe (
 	
 	// Create wires for loads, write, draw, reset, and data
 	wire go;
-	assign go = SW[0];
+	assign go = SW[16];
 	wire writeEn;
 	wire resetn;
 	assign resetn = SW[17];
@@ -375,7 +375,6 @@ module datapath(ld_p1, ld_p2, move, pos, ld_pos, resetn, clock, s1, s2, s3, s4, 
 		// Load data values
 		else
 		begin
-
 			// Loading player choices in player registers
 			if (ld_p1)
 				p1 <= move;
@@ -453,6 +452,11 @@ module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, turn);
 	
 	always @(*)
 	begin: signals
+//		// Set all to a default 0
+//		ld_p1 = 1'b0;
+//		ld_p2 = 1'b0;
+//		ld_pos = 1'b0;
+//		turn = 2'b00;
 		case (curr_state)
 			S_LOAD_P1_POS:	// Load player 1's square
 			begin
