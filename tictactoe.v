@@ -1,6 +1,6 @@
 /* Wild Misere Tic Tac Toe
 
-Wild Misere Red Tile Blue is a variation of the classic Tic Tac Toe game.
+Wild Misere Tic Tac Toe is a variation of the classic Tic Tac Toe game.
 The "Wild" factor involves allowing a player to choose if they wish to
 play an X or O on each turn.
 The "Misere" factor puts a twist on the ending condition of the game.
@@ -52,16 +52,16 @@ module tictactoe (
 	wire resetn;
 	assign resetn = SW[17];
 	wire drawEn;
-	wire [1:0] move;
-	assign move = SW[1:0];
+	reg [1:0] move;
+//	assign move = SW[1:0];
 	wire [1:0] winner;
 	wire ld_p1;
 	wire ld_p2;
 	wire ld_pos;
 	wire check;
 	wire [1:0] s1, s2, s3, s4, s5, s6, s7, s8, s9, turn;
-	wire [3:0] pos;
-	assign pos = SW[7:4];
+	reg [3:0] pos;
+//	assign pos = SW[7:4];
 
 	// Create wires for keyboard module
 	wire [7:0] ASCII_value;
@@ -76,36 +76,99 @@ module tictactoe (
 	reg hex_counter_enable;
 	wire [3:0] position;
 
-//	// Instansiate Keyboard module
-//    keyboard kd(
-//        .clk(CLOCK_50),
-//        .reset(~resetn),
-//        .ps2d(PS2_KBDAT),
-//        .ps2c(PS2_KBCLK),
-//        .scan_code(kb_scan_code),
-//        .scan_code_ready(kb_sc_ready),
-//        .letter_case_out(kb_letter_case)
-//    );
-//
-//    // Instansiate ascii converter
-//    keytoascii ascii(
-//        .ascii_code(ASCII_value),
-//        .scan_code(kb_scan_code),
-//        .letter_case(kb_letter_case)
-//    );
-//	 
-//	ascii_decoder decoder(
-//		.ASCII_VAL(ASCII_value),
-//		.clock(CLOCK_50),
-//		.move(move[1:0]),
-//		.pos(pos[3:0])
-//	);
+	// Instansiate Keyboard module
+    keyboard kd(
+        .clk(CLOCK_50),
+        .reset(~resetn),
+        .ps2d(PS2_KBDAT),
+        .ps2c(PS2_KBCLK),
+        .scan_code(kb_scan_code),
+        .scan_code_ready(kb_sc_ready),
+        .letter_case_out(kb_letter_case)
+    );
+
+    // Instansiate ascii converter
+    keytoascii ascii(
+        .ascii_code(ASCII_value),
+        .scan_code(kb_scan_code),
+        .letter_case(kb_letter_case)
+    );
+
+
+	// Same as above but using if statements
+	always@(CLOCK_50)
+	begin
+		if(ASCII_value == 8'h78)	// Move type is x, move is 01
+			begin
+			move <= 2'b01;
+			pos <= 4'b0000;
+			end
+		else if(ASCII_value == 8'h6F)	// Move type is o, move is 10
+			begin
+			move <= 2'b10;
+			pos <= 4'b0000;
+			end
+		else if(ASCII_value == 8'h31)	// Each case below is for cell nums 1-9 that sets pos to 1-9 in bindary
+			begin
+			move <= 2'b00;
+			pos <= 4'b0001;
+			end
+		else if(ASCII_value == 8'h32)
+			begin
+			move <= 2'b00;
+			pos <= 4'b0010;
+			end
+		else if(ASCII_value == 8'h33)
+			begin
+			move <= 2'b00;
+			pos <= 4'b0011;
+			end
+		else if(ASCII_value == 8'h34)
+			begin
+			move <= 2'b00;
+			pos <= 4'b0100;
+			end
+		else if(ASCII_value == 8'h35)
+			begin
+			move <= 2'b00;
+			pos <= 4'b0101;
+			end
+		else if(ASCII_value == 8'h36)
+			begin
+			move <= 2'b00;
+			pos <= 4'b0110;
+			end
+		else if(ASCII_value == 8'h37)
+			begin
+			move <= 2'b00;
+			pos <= 4'b0111;
+			end
+		else if(ASCII_value == 8'h38)
+			begin
+			move <= 2'b00;
+			pos <= 4'b1000;
+			end
+		else if(ASCII_value == 8'h39)
+			begin
+			move <= 2'b00;
+			pos <= 4'b1001;
+			end
+		else	// Any other key is pressed
+			begin
+			move <= 2'b00;
+			pos <= 4'b000;
+			end
+	end
 	
+	
+	
+	// rate is 2 sec
 	always @(posedge CLOCK_50)
 	begin
 		rd_in = 28'b101111101011110000100000000;
 	end
 
+	// pulse every 2 sec
 	always @(posedge CLOCK_50)
 	begin
 		hex_counter_enable <= (rd_out[27:0] == 28'b0) ? 1 : 0;
@@ -113,18 +176,21 @@ module tictactoe (
 
 	always @(posedge CLOCK_50)
 	begin
+		// if the counter is 1, then display row 1
 		if(drc_out == 3'b001)
 		begin
 			hex0pos = s1;
 			hex1pos = s2;
 			hex2pos = s3;
 		end
+		// if the counter is 2, then display row 2
 		else if(drc_out == 3'b010)
 		begin
 			hex0pos = s4;
 			hex1pos = s5;
 			hex2pos = s6;
 		end
+		// if the counter is 3, then display row 3
 		else if(drc_out == 3'b011)
 		begin
 			hex0pos = s7;
@@ -203,7 +269,7 @@ module tictactoe (
 		.IN(hex2pos),
 		.OUT(HEX0[6:0])
 	);
-	
+
 	move_hexdisplay hex1(
 		.IN(hex1pos),
 		.OUT(HEX1[6:0])
@@ -225,39 +291,12 @@ module tictactoe (
 		.OUT(HEX4[6:0])
 	);
 	
-	/*
-	// move in square 1
-	hex_display hex0(
-		.IN(s3[1:0]),
-		.OUT(HEX0[6:0])
-	);
-
-	// move in square 2
-	hex_display hex1(
-		.IN(s2[1:0]),
-		.OUT(HEX1[6:0])
-	);
-	
-	// move in square 3
-	hex_display hex2(
-		.IN(s1[1:0]),
-		.OUT(HEX2[6:0])
-	);
-	*/
 	
 	// selected position
 	hex_display hex5(
 		.IN(pos[3:0]),
 		.OUT(HEX5[6:0])
 	);
-	
-	/*
-	// position in register
-	hex_display hex5(
-		.IN(position[3:0]),
-		.OUT(HEX5[6:0])
-	);
-	*/
 	
 	// turn
 	hex_display hex6(
@@ -336,6 +375,7 @@ module datapath(ld_p1, ld_p2, move, pos, ld_pos, resetn, clock, s1, s2, s3, s4, 
 		// Load data values
 		else
 		begin
+
 			// Loading player choices in player registers
 			if (ld_p1)
 				p1 <= move;
@@ -413,11 +453,6 @@ module control(go, resetn, clock, check, ld_p1, ld_p2, ld_pos, turn);
 	
 	always @(*)
 	begin: signals
-//		// Set all to a default 0
-//		ld_p1 = 1'b0;
-//		ld_p2 = 1'b0;
-//		ld_pos = 1'b0;
-//		turn = 2'b00;
 		case (curr_state)
 			S_LOAD_P1_POS:	// Load player 1's square
 			begin
@@ -570,100 +605,6 @@ module check_end(s1, s2, s3, s4, s5, s6, s7, s8, s9, turn, check, winner);
 	end
 endmodule
 
-//module ascii_decoder(ASCII_VAL, clock, move, pos);
-//	input ASCII_VAL;
-//	input clock;
-//	output reg [1:0] move;
-//	output reg [3:0] pos;
-//	
-////	always@(clock)
-////	begin
-////		// Data in is 10 or 01, default 00
-////		case(ASCII_VAL)
-////			8'h78 : move <= 2'b01; // Move type is x, move is 01
-////			8'h6F : move <= 2'b10; // Move type is o, move is 10
-////			default : move <= 2'b00; // Default to 0
-////		endcase
-////	end
-////	
-////	always@(clock)
-////	begin
-////		// Pos is 4 bit 1-9, default 0
-////		case (ASCII_VAL)
-////			8'h31 : pos <= 4'b0001; // Cell number 1, pos is 1 in binary
-////			8'h32 : pos <= 4'b0010; // Cell number 2, pos is 2 in binary
-////			8'h33 : pos <= 4'b0011; // Cell number 3, pos is 3 in binary
-////			8'h34 : pos <= 4'b0100; // Cell number 4, pos is 4 in binary
-////			8'h35 : pos <= 4'b0101; // Cell number 5, pos is 5 in binary
-////			8'h36 : pos <= 4'b0110; // Cell number 6, pos is 6 in binary
-////			8'h37 : pos <= 4'b0111; // Cell number 7, pos is 7 in binary
-////			8'h38 : pos <= 4'b1000; // Cell number 8, pos is 8 in binary
-////			8'h39 : pos <= 4'b1001; // Cell number 9, pos is 9 in binary
-////			default : pos <= 4'b0000; // Default to 0
-////		endcase
-////	end
-//
-//
-//	// Same as above but using if statements
-//	always@(clock)
-//	begin
-//		if(ASCII_VAL == 8'h62)
-//			begin
-//			move <= 2'b01;
-//			pos <= 4'b0000;
-//			end
-//		else if(ASCII_VAL == 8'h72)
-//			begin
-//			move <= 2'b10;
-//			pos <= 4'b0000;
-//			end
-//		else if(ASCII_VAL == 8'h31)
-//			begin
-//			move <= 2'b00;
-//			pos <= 4'b0001;
-//			end
-//		else if(ASCII_VAL == 8'h32)
-//			begin
-//			move <= 2'b00;
-//			pos <= 4'b0010;
-//			end
-//		else if(ASCII_VAL == 8'h33)
-//			begin
-//			move <= 2'b00;
-//			pos <= 4'b0011;
-//			end
-//		else if(ASCII_VAL == 8'h34)
-//			begin
-//			move <= 2'b00;
-//			pos <= 4'b0100;
-//			end
-//		else if(ASCII_VAL == 8'h35)
-//			begin
-//			move <= 2'b00;
-//			pos <= 4'b0101;
-//			end
-//		else if(ASCII_VAL == 8'h36)
-//			begin
-//			move <= 2'b00;
-//			pos <= 4'b0110;
-//			end
-//		else if(ASCII_VAL == 8'h37)
-//			begin
-//			move <= 2'b00;
-//			pos <= 4'b0111;
-//			end
-//		else if(ASCII_VAL == 8'h38)
-//			begin
-//			move <= 2'b00;
-//			pos <= 4'b1000;
-//			end
-//		else if(ASCII_VAL == 8'h39)
-//			begin
-//			move <= 2'b00;
-//			pos <= 4'b1001;
-//			end
-//	end
-//endmodule
 
 // Hex decoder module for outputting X or O to a hex display
 module move_hexdisplay(IN, OUT);
@@ -675,7 +616,7 @@ module move_hexdisplay(IN, OUT);
 		case(IN[1:0])
 			2'b01 : OUT <= 7'b0001001; // Outputs X => H
 			2'b10 : OUT <= 7'b1000000; // Outputs O => 0
-			default : OUT <= 7'b0111111;
+			default : OUT <= 7'b0111111; // Default displays -
 		endcase
 	end
 endmodule
@@ -689,7 +630,7 @@ module hex_display(IN, OUT);
 	always @(*)
 	begin
 		case(IN[3:0])
-			4'b0000: OUT = 7'b1000000;
+			// Removed case for 4'b000
 			4'b0001: OUT = 7'b1111001;
 			4'b0010: OUT = 7'b0100100;
 			4'b0011: OUT = 7'b0110000;
